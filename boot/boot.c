@@ -26,8 +26,8 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-    lib_puts("myOS version 0.1 build 5\n");
-    
+    lib_puts("myOS version 0.1 build 6\n");
+    printf("Boot HART is %i", boot_cpu_hartid);
     while (1) {}
     return 0;
 }
