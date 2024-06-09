@@ -17,14 +17,14 @@ SECTIONS
     .text : { *(.text .text.*) } :text
     
     .data :  ALIGN(8)  { 
-        *(.data) 
-        . = ALIGN(8);
-        .sdata : {
-	        __global_pointer$ = . + 0x800;
-            *(.sdata .sdata.* .sdata2.*)
-        }
+        *(.data)  
     } :data
-    
+
+    .sdata :ALIGN(8) {
+	    __global_pointer$ = . + 0x800;
+        *(.sdata .sdata.* .sdata2.*)
+    } :data  
+
     .bss : { 
         _bss_start = .;
         *(.bss) 
