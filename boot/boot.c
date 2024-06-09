@@ -14,9 +14,21 @@ void lib_puts(char *s) {
 
 }
 
+    void memset(void *b, int c, int len)
+    {
+       char *s = b;
+
+        while(len--)
+            *s++ = c;
+    }
 
 int boot_start(void)
 {
+
+    /* Prepare the bss memory region */
+    memset(&bss_start, 0, (&bss_end - &bss_start));
+
+
     int x = 0;
 
     for(int i = 0; i < FB_LEN; i++) {

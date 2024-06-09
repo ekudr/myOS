@@ -7,8 +7,6 @@ PHDRS
     headers PT_PHDR PHDRS;
     text PT_LOAD FILEHDR PHDRS;
     data PT_LOAD;
-    rodata PT_LOAD;
-    dynamic PT_DYNAMIC;
 }
 
 SECTIONS
@@ -17,12 +15,21 @@ SECTIONS
     _start = .;
 
     .text : { *(.text .text.*) } :text
-    .data : { *(.data) } :data
-    .bss : { *(.bss) } :data
-
-    .sdata : {
-	__global_pointer$ = . + 0x800;
-	*(.sdata*)
+    
+    .data :  ALIGN(8)  { 
+        *(.data) 
+        . = ALIGN(8);
+        .sdata : {
+	        __global_pointer$ = . + 0x800;
+            *(.sdata .sdata.* .sdata2.*)
+        }
     } :data
     
+    .bss : { 
+        _bss_start = .;
+        *(.bss) 
+        _bss_end = .;
+    } :data
+    
+    .got : { *(.got*) } :data
 }
