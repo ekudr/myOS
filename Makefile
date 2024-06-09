@@ -3,7 +3,7 @@
 DEBUG = build/debug
 LDFLAGS = -nostdlib
 INCLUDE = -Iinclude
-CPFLAGS = -nostdlib -fno-stack-protector
+CPFLAGS = -nostdlib -fno-stack-protector -static
 
 
 GCC = gcc

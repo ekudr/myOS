@@ -1,5 +1,9 @@
 #include <common.h>
 
+extern char _bss_start, _bss_end;
+
+
+
 unsigned long boot_cpu_hartid;
 
 #define FB	(u8*)0xfe000000
@@ -26,7 +30,7 @@ int boot_start(void)
 {
 
     /* Prepare the bss memory region */
-    memset(&bss_start, 0, (&bss_end - &bss_start));
+    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
 
 
     int x = 0;
