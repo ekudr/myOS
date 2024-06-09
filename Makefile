@@ -3,8 +3,8 @@
 DEBUG = build/debug
 LDFLAGS = -nostdlib
 INCLUDE = -Iinclude
-#CPFLAGS = -W -nostdlib
-CPFLAGS = -nostdlib -Wl,--gc-sections -ffunction-sections -fdata-sections -fdiagnostics-show-option
+CPFLAGS = -nostdlib -fno-stack-protector
+
 
 GCC = gcc
 OBJCOPY = objcopy
