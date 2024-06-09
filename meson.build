@@ -13,5 +13,5 @@ c_args = [
     '-static',    
 ]
 
-subdir('inslude')
+subdir('include')
 subdir('boot')
