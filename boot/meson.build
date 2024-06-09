@@ -10,7 +10,7 @@ executable(
     'boot.elf',
     sources : boot_sources,
     include_directories: [inc_include],
-    link_arg: [
+    link_args: [
         '-T boot.ld',
     ],
     link_depends: ['boot.ld'],
