@@ -5,4 +5,4 @@
 #include <stdint.h>
 
 
-#endif _COMMON_H
+#endif /* _COMMON_H */
