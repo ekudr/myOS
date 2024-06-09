@@ -14,12 +14,12 @@
 
 
 
-void uart_putc(int ch) {
+void uart_putc(char ch) {
     while ((REGW(UART, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
     REGW(UART, UART_THR) = ch;
 }
 
-void lib_putc(int ch) {
-    if (ch == "\n") uart_putc("\r");
+void lib_putc(char ch) {
+    if (ch == '\n') uart_putc('\r');
     uart_putc(ch);
 }

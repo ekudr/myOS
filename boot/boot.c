@@ -5,7 +5,7 @@
 #define FB_LEN	1920*1080
 
 
-void lib_putc(int ch);
+void lib_putc(char ch);
 
 
 void lib_puts(char *s) {
@@ -25,7 +25,7 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-    lib_puts("myOS version 0.1 build 3\n");
+    lib_puts("myOS version 0.1 build 4\n");
     while (1) {}
     return 0;
 }
