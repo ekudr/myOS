@@ -1,5 +1,5 @@
 boot_sources = [
-    'boot.S',
+    'start.S',
     'boot.c',
     'printf.c',
     'uart.c'
