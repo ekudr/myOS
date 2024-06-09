@@ -4,7 +4,7 @@ extern char _bss_start, _bss_end;
 
 
 
-unsigned long boot_cpu_hartid;
+u64 boot_cpu_hartid;
 
 #define FB	(u8*)0xfe000000
 #define FB_LEN	1920*1080
