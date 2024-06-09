@@ -1,5 +1,6 @@
-#include <stdint.h>
+#include <common.h>
 
+unsigned long boot_cpu_hartid;
 
 #define FB	(u8*)0xfe000000
 #define FB_LEN	1920*1080
@@ -25,7 +26,8 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-    lib_puts("myOS version 0.1 build 4\n");
+    lib_puts("myOS version 0.1 build 5\n");
+    
     while (1) {}
     return 0;
 }

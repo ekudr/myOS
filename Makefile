@@ -8,7 +8,7 @@ CPFLAGS = -W -nostdlib
 GCC = gcc
 OBJCOPY = objcopy
 
-boot-obj = boot/start.S boot/boot.c boot/uart.c
+boot-obj = boot/start.S boot/boot.c boot/uart.c boot/prinf.c
 
 
 all: build boot.elf OSImage.bin
