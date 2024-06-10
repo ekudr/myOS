@@ -25,8 +25,8 @@ void lib_putc(char ch) {
 }
 
 void _putchar(char character){
-    if (ch == '\n') uart_putc('\r');
-    uart_putc(ch);   
+    if (character == '\n') uart_putc('\r');
+    uart_putc(character);   
 }
 
 void lib_puts(char *s) {
