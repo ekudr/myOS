@@ -3,7 +3,8 @@ boot_sources = [
     'start.S',
     'boot.c',
     'printf.c',
-    'uart.c'
+    'uart.c',
+    'mm_init.c',
 ]
 
 linker_scripts = [

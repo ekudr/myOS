@@ -21,4 +21,8 @@ typedef __u16	u16;
 typedef __u32	u32;
 typedef __u64	u64;
 
+typedef unsigned long   _size_t;
+typedef _size_t         size_t;
+typedef _size_t         uintptr_t;
+
 #endif  /* _STDINT_H */
