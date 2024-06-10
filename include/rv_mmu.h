@@ -1,3 +1,23 @@
+/****************************************************************************
+ * arch/risc-v/src/common/riscv_mmu.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
 #ifndef _RV_MMU_H
 #define _RV_MMU_H
 
@@ -96,6 +116,328 @@
 
 #define SATP_ADDR_TO_PPN(_addr) ((_addr) >> RV_MMU_PAGE_SHIFT)
 #define SATP_PPN_TO_ADDR(_ppn)  ((_ppn)  << RV_MMU_PAGE_SHIFT)
+
+/****************************************************************************
+ * Inline Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: mmu_satp_reg
+ *
+ * Description:
+ *   Utility function to build satp register value for input parameters
+ *
+ * Input Parameters:
+ *   pgbase - The physical base address of the translation table base
+ *   asid - Address space identifier. This can be used to identify different
+ *     address spaces. It is not necessary to use this, nor is it necessary
+ *     for the RISC-V implementation to implement such bits. This means in
+ *     practice that the value should not be used in this generic driver.
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_satp_reg(uintptr_t pgbase, uint16_t asid)
+{
+  uintptr_t reg;
+  reg  = ((RV_MMU_SATP_MODE << SATP_MODE_SHIFT) & SATP_MODE_MASK);
+  reg |= (((uintptr_t)asid << SATP_ASID_SHIFT) & SATP_ASID_MASK);
+  reg |= ((SATP_ADDR_TO_PPN(pgbase) << SATP_PPN_SHIFT) & SATP_PPN_MASK);
+  return reg;
+}
+
+/****************************************************************************
+ * Name: mmu_write_satp
+ *
+ * Description:
+ *   Write satp
+ *
+ * Input Parameters:
+ *   reg - satp value
+ *
+ ****************************************************************************/
+
+static inline void mmu_write_satp(uintptr_t reg)
+{
+  __asm__ __volatile__
+    (
+      "csrw satp, %0\n"
+      "sfence.vma x0, x0\n"
+      "fence rw, rw\n"
+      "fence.i\n"
+      :
+      : "rK" (reg)
+      : "memory"
+    );
+
+}
+
+/****************************************************************************
+ * Name: mmu_read_satp
+ *
+ * Description:
+ *   Read satp
+ *
+ * Returned Value:
+ *   satp register value
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_read_satp(void)
+{
+  uintptr_t reg;
+
+  __asm__ __volatile__
+    (
+      "csrr %0, satp\n"
+      : "=r" (reg)
+      :
+      : "memory"
+    );
+
+  return reg;
+}
+
+/****************************************************************************
+ * Name: mmu_invalidate_tlb_by_vaddr
+ *
+ * Description:
+ *   Flush the TLB for vaddr entry
+ *
+ * Input Parameters:
+ *   vaddr - The virtual address to flush
+ *
+ ****************************************************************************/
+
+static inline void mmu_invalidate_tlb_by_vaddr(uintptr_t vaddr)
+{
+  __asm__ __volatile__
+    (
+      "sfence.vma x0, %0\n"
+      :
+      : "rK" (vaddr)
+      : "memory"
+    );
+}
+
+/****************************************************************************
+ * Name: mmu_invalidate_tlbs
+ *
+ * Description:
+ *   Flush the entire TLB
+ *
+ ****************************************************************************/
+
+static inline void mmu_invalidate_tlbs(void)
+{
+  __asm__ __volatile__
+    (
+      "sfence.vma x0, x0\n"
+      :
+      :
+      : "memory"
+    );
+}
+
+/****************************************************************************
+ * Name: mmu_enable
+ *
+ * Description:
+ *   Enable MMU and set the base page table address
+ *
+ * Input Parameters:
+ *   pgbase - The physical base address of the translation table base
+ *   asid - Address space identifier. This can be used to identify different
+ *     address spaces. It is not necessary to use this, nor is it necessary
+ *     for the RISC-V implementation to implement such bits. This means in
+ *     practice that the value should not be used in this generic driver.
+ *
+ ****************************************************************************/
+
+static inline void mmu_enable(uintptr_t pgbase, uint16_t asid)
+{
+  uintptr_t reg = mmu_satp_reg(pgbase, asid);
+
+  /* Commit to satp and synchronize */
+
+  mmu_write_satp(reg);
+}
+
+/****************************************************************************
+ * Name: mmu_pte_to_paddr
+ *
+ * Description:
+ *   Extract physical address from PTE
+ *
+ * Input Parameters:
+ *   pte - Page table entry
+ *
+ * Returned Value:
+ *   Physical address from PTE
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_pte_to_paddr(uintptr_t pte)
+{
+  uintptr_t paddr = pte;
+  paddr  &= RV_MMU_PTE_PPN_MASK;  /* Remove flags */
+  paddr <<= RV_MMU_PTE_PPN_SHIFT; /* Move to correct position */
+  return paddr;
+}
+
+/****************************************************************************
+ * Name: mmu_satp_to_paddr
+ *
+ * Description:
+ *   Extract physical address from SATP
+ *
+ * Returned Value:
+ *   Physical address from SATP value
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_satp_to_paddr(uintptr_t satp)
+{
+  uintptr_t ppn;
+  ppn = satp;
+  ppn = ((ppn >> SATP_PPN_SHIFT) & SATP_PPN_MASK);
+  return SATP_PPN_TO_ADDR(ppn);
+}
+
+/****************************************************************************
+ * Name: mmu_get_satp_pgbase
+ *
+ * Description:
+ *   Utility function to read the current base page table physical address
+ *
+ * Returned Value:
+ *   Physical address of the current base page table
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_get_satp_pgbase(void)
+{
+  return mmu_satp_to_paddr(mmu_read_satp());
+}
+
+/****************************************************************************
+ * Name: mmu_ln_setentry
+ *
+ * Description:
+ *   Set a level n translation table entry.
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *   lnvaddr - The virtual address of the beginning of the page table at
+ *     level n
+ *   paddr - The physical address to be mapped. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *   vaddr - The virtual address to be mapped. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *   mmuflags - The MMU flags to use in the mapping.
+ *
+ ****************************************************************************/
+
+void mmu_ln_setentry(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,
+                     uintptr_t vaddr, uint64_t mmuflags);
+
+/****************************************************************************
+ * Name: mmu_ln_getentry
+ *
+ * Description:
+ *   Get a level n translation table entry.
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *   lnvaddr - The virtual address of the beginning of the page table at
+ *     level n
+ *   vaddr - The virtual address to get pte for. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *
+ ****************************************************************************/
+
+uintptr_t mmu_ln_getentry(uint32_t ptlevel, uintptr_t lnvaddr,
+                          uintptr_t vaddr);
+
+/****************************************************************************
+ * Name: mmu_ln_restore
+ *
+ * Description:
+ *   Restore a level n translation table entry.
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *   lnvaddr - The virtual address of the beginning of the page table at
+ *     level n
+ *   vaddr - The virtual address to get pte for. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *   entry - Entry to restore, previously obtained by mmu_ln_getentry
+ *
+ ****************************************************************************/
+
+void mmu_ln_restore(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t vaddr,
+                    uintptr_t entry);
+
+/****************************************************************************
+ * Name: mmu_ln_clear
+ *
+ * Description:
+ *   Unmap a level n translation table entry.
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *   lnvaddr - The virtual address of the beginning of the page table at
+ *     level n
+ *   vaddr - The virtual address to get pte for. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *
+ ****************************************************************************/
+
+#define mmu_ln_clear(ptlevel, lnvaddr, vaddr) \
+  mmu_ln_restore(ptlevel, lnvaddr, vaddr, 0)
+
+/****************************************************************************
+ * Name: mmu_ln_map_region
+ *
+ * Description:
+ *   Set a translation table region for level n
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *   lnvaddr - The virtual address of the beginning of the page table at
+ *     level n
+ *   paddr - The physical address to be mapped. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *   vaddr - The virtual address to be mapped. Must be aligned to a PPN
+ *     address boundary which is dependent on the level of the entry
+ *   size - The size of the region in bytes
+ *   mmuflags - The MMU flags to use in the mapping.
+ *
+ ****************************************************************************/
+
+void mmu_ln_map_region(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,
+                       uintptr_t vaddr, size_t size, uint64_t mmuflags);
+
+/****************************************************************************
+ * Name: mmu_get_region_size
+ *
+ * Description:
+ *   Get (giga/mega) page size for level n.
+ *
+ * Input Parameters:
+ *   ptlevel - The translation table level, amount of levels is
+ *     MMU implementation specific
+ *
+ * Returned Value:
+ *   Region size for one page at level n.
+ *
+ ****************************************************************************/
+
+size_t mmu_get_region_size(uint32_t ptlevel);
 
 
 #endif /* _RV_MMU_H */

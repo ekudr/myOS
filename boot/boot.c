@@ -38,8 +38,7 @@ int boot_start(void)
     lib_puts("myOS version ");
     lib_puts( version);
     lib_putc('\n');
-    printf("Boot HART is %d\n", boot_cpu_hartid);
-    printf("Loading ...");
+    printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
 
     mm_init();
 

@@ -1,3 +1,23 @@
+/****************************************************************************
+ * arch/risc-v/src/jh7110/jh7110_mm_init.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
 #include <common.h>
 #include <rv_mmu.h>
 #include <queue.h>
@@ -56,6 +76,18 @@ uintptr_t               g_kernel_pgt_pbase = PGT_L1_PBASE;
 static sq_queue_t       g_free_slabs;
 static pgalloc_slab_t   g_slabs[SLAB_COUNT];
 
+/****************************************************************************
+ * Name: slab_init
+ *
+ * Description:
+ *   Initialize slab allocator for L2 or L3 page table entries
+ *
+ * L2 Page table is used for SV32. L3 used for SV39
+ *
+ * Input Parameters:
+ *   start - Beginning of the L2 or L3 page table pool
+ *
+ ****************************************************************************/
 
 static void slab_init(uintptr_t start)
 {
@@ -71,29 +103,120 @@ static void slab_init(uintptr_t start)
     }
 }
 
+/****************************************************************************
+ * Name: slab_alloc
+ *
+ * Description:
+ *   Allocate single slab for L2/L3 page table entry
+ *
+ * L2 Page table is used for SV32. L3 used for SV39
+ *
+ ****************************************************************************/
+
+static uintptr_t slab_alloc(void)
+{
+  pgalloc_slab_t *slab = (pgalloc_slab_t *)sq_remfirst(&g_free_slabs);
+  return slab ? (uintptr_t)slab->memory : 0;
+}
+
+/****************************************************************************
+ * Name: map_region
+ *
+ * Description:
+ *   Map a region of physical memory to the L3 page table
+ *
+ * Input Parameters:
+ *   paddr - Beginning of the physical address mapping
+ *   vaddr - Beginning of the virtual address mapping
+ *   size - Size of the region in bytes
+ *   mmuflags - The MMU flags to use in the mapping
+ *
+ ****************************************************************************/
+
+static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
+                       uint32_t mmuflags)
+{
+  uintptr_t endaddr;
+  uintptr_t pbase;
+  int npages;
+  int i;
+  int j;
+
+  /* How many pages */
+
+  npages = (size + RV_MMU_PAGE_MASK) >> RV_MMU_PAGE_SHIFT;
+  endaddr = vaddr + size;
+
+  for (i = 0; i < npages; i += RV_MMU_PAGE_ENTRIES)
+    {
+      /* See if a mapping exists */
+
+      pbase = mmu_pte_to_paddr(mmu_ln_getentry(KMM_SPBASE_IDX,
+                                               KMM_SPBASE, vaddr));
+      if (!pbase)
+        {
+          /* No, allocate 1 page, this must not fail */
+
+          pbase = slab_alloc();
+//          DEBUGASSERT(pbase);
+
+          /* Map it to the new table */
+
+          mmu_ln_setentry(KMM_SPBASE_IDX, KMM_SPBASE, pbase, vaddr,
+                          MMU_UPGT_FLAGS);
+        }
+
+      /* Then add the mappings */
+
+      for (j = 0; j < RV_MMU_PAGE_ENTRIES && vaddr < endaddr; j++)
+        {
+          mmu_ln_setentry(KMM_PBASE_IDX, pbase, paddr, vaddr, mmuflags);
+          paddr += KMM_PAGE_SIZE;
+          vaddr += KMM_PAGE_SIZE;
+        }
+    }
+}
+
 
 void kernel_mapping(void) {
 
   /* Initialize slab allocator for the L2/L3 page tables */
 
   slab_init(KMM_PBASE);
-  printf("[MMU] Kernel memory tables base address %X\n", KMM_PBASE);
+  printf("[MMU] Kernel memory tables base address 0x%lX\n", KMM_PBASE);
 
     /* Map I/O region, use enough large page tables for the IO region. */
 
   printf("[MMU] map I/O regions\n");
-  
-//  mmu_ln_map_region(1, PGT_L1_VBASE, MMU_IO_BASE, MMU_IO_BASE,
-//                    MMU_IO_SIZE, MMU_IO_FLAGS);
 
+  mmu_ln_map_region(1, PGT_L1_VBASE, MMU_IO_BASE, MMU_IO_BASE,
+                    MMU_IO_SIZE, MMU_IO_FLAGS);
 
+  /* Map the kernel text and data for L2/L3 */
+
+  printf("[MMU] map kernel text\n");
+  map_region(KFLASH_START, KFLASH_START, KFLASH_SIZE, MMU_KTEXT_FLAGS);
+
+  printf("[MMU] map kernel data\n");
+  map_region(KSRAM_START, KSRAM_START, KSRAM_SIZE, MMU_KDATA_FLAGS);
+
+  /* Connect the L1 and L2 page tables for the kernel text and data */
+
+  printf("[MMU] connect the L1 and L2 page tables\n");
+  mmu_ln_setentry(1, PGT_L1_VBASE, PGT_L2_PBASE, KFLASH_START, PTE_G);
+
+  /* Map the page pool */
+
+  printf("[MMU] map the page pool\n");
+  mmu_ln_map_region(2, PGT_L2_VBASE, PGPOOL_START, PGPOOL_START, PGPOOL_SIZE,
+                    MMU_KDATA_FLAGS);
 }
 
 void mm_init(void) {
-    printf("MMU init ...\n");
 
     kernel_mapping();
 
-//    mmu_enable();
-    printf("MMU init is Done\n");
+    printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_pbase);
+    mmu_enable();
+    printf("[MMU] init is Done\n");
 }
