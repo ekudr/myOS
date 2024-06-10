@@ -1,5 +1,6 @@
 #include <common.h>
 #include <rv_mmu.h>
+#include <queue.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -28,8 +29,6 @@
 #define KMM_SPBASE      PGT_L2_PBASE
 #define KMM_SPBASE_IDX  2
 
-#define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
-
 
 struct pgalloc_slab_s
 {
@@ -44,6 +43,8 @@ typedef struct pgalloc_slab_s pgalloc_slab_t;
 static size_t         m_l1_pgtable[PGT_L1_SIZE] locate_data(".pgtables");
 static size_t         m_l2_pgtable[PGT_L2_SIZE] locate_data(".pgtables");
 static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
+
+#define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
 
 /* Kernel mappings (L1 base) */
 
@@ -76,7 +77,7 @@ void kernel_mapping(void) {
   /* Initialize slab allocator for the L2/L3 page tables */
 
   slab_init(KMM_PBASE);
-  
+
 }
 
 void mm_init(void) {
