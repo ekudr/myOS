@@ -67,7 +67,7 @@
 /* Kernel FLASH and RAM are mapped globally */
 
 #define MMU_KTEXT_FLAGS         (PTE_R | PTE_X | PTE_G)
-#define MMU_KDATA_FLAGS         (PTE_R | PTE_W | PTE_G)
+#define MMU_KDATA_FLAGS         (PTE_R | PTE_W | PTE_X | PTE_G)  // Added eXecution
 
 /* Modes, for RV32 only 1 is valid, for RV64 1-7 and 10-15 are reserved */
 

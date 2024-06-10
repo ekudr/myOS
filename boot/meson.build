@@ -5,6 +5,7 @@ boot_sources = [
     'printf.c',
     'uart.c',
     'mm_init.c',
+    'mmu.c',
 ]
 
 linker_scripts = [

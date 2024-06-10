@@ -194,16 +194,14 @@ void kernel_mapping(void) {
 
   /* Map the kernel text and data for L2/L3 */
 
-  printf("[MMU] map kernel text\n");
-  map_region(KFLASH_START, KFLASH_START, KFLASH_SIZE, MMU_KTEXT_FLAGS);
 
-  printf("[MMU] map kernel data\n");
+  printf("[MMU] map kernel\n");
   map_region(KSRAM_START, KSRAM_START, KSRAM_SIZE, MMU_KDATA_FLAGS);
 
   /* Connect the L1 and L2 page tables for the kernel text and data */
 
   printf("[MMU] connect the L1 and L2 page tables\n");
-  mmu_ln_setentry(1, PGT_L1_VBASE, PGT_L2_PBASE, KFLASH_START, PTE_G);
+  mmu_ln_setentry(1, PGT_L1_VBASE, PGT_L2_PBASE, KSRAM_START, PTE_G);
 
   /* Map the page pool */
 
