@@ -4,7 +4,8 @@ extern char _bss_start, _bss_end;
 
 
 
-u64 boot_cpu_hartid;
+u32 boot_cpu_hartid;
+static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
 #define FB_LEN	1920*1080
@@ -42,8 +43,8 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-    lib_puts("myOS version %s\n", VERSION_STR);
-    printf("Boot HART is %%d\n", boot_cpu_hartid);
+    lib_puts("myOS version %s\n", version);
+    printf("Boot HART is %d\n", boot_cpu_hartid);
     printf("Loading ...");
     while (1) {}
     return 0;

@@ -29,7 +29,7 @@ start_entry:
     csrc sstatus, t0
 
 	la a2, boot_cpu_hartid
-	sd a0, (a2)
+	sw a0, (a2)
 
     li sp, 0x40210000
 
