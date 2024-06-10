@@ -2,6 +2,19 @@
 #ifndef _STDINT_H
 #define _STDINT_H
 
+
+#ifndef NULL
+  /* SDCC is sensitive to NULL pointer type conversions, and C++ defines
+   * NULL as zero
+   */
+
+#  if defined(SDCC) || defined(__SDCC) || defined(__cplusplus)
+#    define NULL (0)
+#  else
+#    define NULL ((void*)0)
+#  endif
+#endif
+
 typedef unsigned char	__u8;
 typedef unsigned short	__u16;
 typedef unsigned int	__u32;
