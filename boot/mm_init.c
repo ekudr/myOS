@@ -82,6 +82,7 @@ void kernel_mapping(void) {
     /* Map I/O region, use enough large page tables for the IO region. */
 
   printf("[MMU] map I/O regions\n");
+  
 //  mmu_ln_map_region(1, PGT_L1_VBASE, MMU_IO_BASE, MMU_IO_BASE,
 //                    MMU_IO_SIZE, MMU_IO_FLAGS);
 
