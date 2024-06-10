@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <rv_mmu.h>
+#include <printf.h>
 
 static const size_t g_pgt_sizes[] =
 {
@@ -34,6 +35,8 @@ void mmu_ln_setentry(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,
   uint32_t   index;
 
   //DEBUGASSERT(ptlevel > 0 && ptlevel <= RV_MMU_PT_LEVELS);
+
+  printf("[MMU] set entry: lv: %X lnvAddr %X phAdd vAdd %X\n", ptlevel, lnvaddr, paddr, vaddr);
 
   /* Test if this is a leaf PTE, if it is, set A+D even if they are not used
    * by the implementation.
