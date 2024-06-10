@@ -1,3 +1,3 @@
 # myOS
 
-My try to create kind of OS for RISC-V board VisionFive 2.
+My try to create kind of OS for RISC-V board VisionFive 2 on JH7110 chip.

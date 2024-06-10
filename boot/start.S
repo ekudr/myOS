@@ -29,11 +29,20 @@ start_entry:
     csrc sstatus, t0
 
 	la a2, boot_cpu_hartid
-	sw a0, (a2)
+	sd a0, (a2)
 
-    li sp, 0x40210000
+    /*  Set stack */
+    la t0, _ebss    /* Stack base */
+    li t1, 4096     /* Stack size */
+    mul t1, a0, t1  /* a0 is number oh HART */
+    add t0, t0, t1  
+    li t1, 4096     /* reserved stack */
+    add t0, t0, t1
+    mv sp, t0
+
+
+//    li sp, 0x40210000
 
     call boot_start
-
     tail boot_start
 
