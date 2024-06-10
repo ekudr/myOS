@@ -43,7 +43,9 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-    lib_puts("myOS version %s\n", version);
+    lib_puts("myOS version ");
+    lib_puts( version);
+    lib_putc('\n');
     printf("Boot HART is %d\n", boot_cpu_hartid);
     printf("Loading ...");
     while (1) {}
