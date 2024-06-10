@@ -32,7 +32,7 @@ start_entry:
 	sd a0, (a2)
 
     /*  Set stack */
-    la t0, _ebss    /* Stack base */
+    la t0, _stack_top   /* Stack base */
     li t1, 4096     /* Stack size */
     mul t1, a0, t1  /* a0 is number oh HART */
     add t0, t0, t1  

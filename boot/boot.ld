@@ -61,9 +61,10 @@ SECTIONS
 
     /* Stack top */
 
-    .stack_top : {
-        . = ALIGN(32);
-        _ebss = ABSOLUTE(.);
+    .stack (NOLOAD): ALIGN(64) {
+        _stack_top = .;
+        . = . + 0x1000;
+        _estack = .;
     } :data
 
 }
