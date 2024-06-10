@@ -19,5 +19,5 @@ subdir('boot')
 objcopy = find_program('objcopy')
 image = custom_target('image',
     input: boot_elf,
-    outpu: 'OSImage.bin',
+    output: 'OSImage.bin',
     command: [objcopy, '-O binary', '@INPUT@', '@OUTPUT@'])
