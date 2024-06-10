@@ -6,6 +6,7 @@ project(
 )
 
 cc = meson.get_compiler('c')
+objcopy = find_program('objcopy')
 
 c_args = [
     '-nostdlib',
@@ -16,8 +17,11 @@ c_args = [
 subdir('include')
 subdir('boot')
 
-objcopy = find_program('objcopy')
+
 image = custom_target('image',
     input: boot_elf,
     output: 'OSImage.bin',
-    command: [objcopy, '-O binary', '@INPUT@', '@OUTPUT@'])
+    command: [objcopy, '-O', 'binary', '@INPUT@', '@OUTPUT@'],
+    depends: boot_elf,
+    build_by_default: true
+)
