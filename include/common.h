@@ -9,7 +9,7 @@
 
 #define locate_data(n) __attribute__((section(n)))
 
-#define _putchar    lib_putc
+void _putchar(char character);
 
 void lib_putc(char ch);
 void lib_puts(char *s);

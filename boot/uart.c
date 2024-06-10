@@ -24,6 +24,11 @@ void lib_putc(char ch) {
     uart_putc(ch);
 }
 
+void _putchar(char character){
+    if (ch == '\n') uart_putc('\r');
+    uart_putc(ch);   
+}
+
 void lib_puts(char *s) {
     while (*s) lib_putc(*s++);
 
