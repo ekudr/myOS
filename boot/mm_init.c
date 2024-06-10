@@ -21,6 +21,7 @@
 #include <common.h>
 #include <rv_mmu.h>
 #include <queue.h>
+#include <jh7110_memmap.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -215,6 +216,6 @@ void mm_init(void) {
     kernel_mapping();
 
     printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_pbase);
-    mmu_enable();
+    mmu_enable(g_kernel_pgt_pbase, 0);
     printf("[MMU] init is Done\n");
 }
