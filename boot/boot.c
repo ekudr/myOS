@@ -11,15 +11,8 @@ static char* version = VERSION_STR;
 #define FB_LEN	1920*1080
 
 
-void lib_putc(char ch);
 
-
-void lib_puts(char *s) {
-    while (*s) lib_putc(*s++);
-
-}
-
-    void memset(void *b, int c, int len)
+void memset(void *b, int c, int len)
     {
        char *s = b;
 
@@ -33,9 +26,8 @@ int boot_start(void)
     /* Prepare the bss memory region */
     memset(&_bss_start, 0, (&_bss_end - &_bss_start));
 
-
+    /* Crashing the screen image. test :) */
     int x = 0;
-
     for(int i = 0; i < FB_LEN; i++) {
 	*(FB+(i*4)) = x++;
 	*(FB+(i*4)+1) = x++;
@@ -46,8 +38,11 @@ int boot_start(void)
     lib_puts("myOS version ");
     lib_puts( version);
     lib_putc('\n');
-    printf("Boot HART is %d%d\n", boot_cpu_hartid, (boot_cpu_hartid>>32));
+    printf("Boot HART is %d\n", boot_cpu_hartid);
     printf("Loading ...");
+
+    mm_init();
+
     while (1) {}
     return 0;
 }
