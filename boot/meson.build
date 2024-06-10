@@ -19,7 +19,7 @@ foreach entry : linker_scripts
     endif
 endforeach
 
-foreach entry : link_scripts
+foreach entry : linker_scripts
     if entry != ''
         linker_script_deps += meson.current_source_dir() / entry
     endif
