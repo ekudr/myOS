@@ -25,7 +25,7 @@ foreach entry : linker_scripts
     endif
 endforeach
 
-executable(
+boot_elf = executable(
     'boot.elf',
     sources : boot_sources,
     include_directories: [inc_include],
