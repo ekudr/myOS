@@ -29,10 +29,10 @@ executable(
     'boot.elf',
     sources : boot_sources,
     include_directories: [inc_include],
+    c_args: c_args,
     link_args: [
         '-nostdlib',
         '-static',
-        '-fno-stack-protector',
         linker_script_flags,
     ],
     link_depends: linker_script_deps,
