@@ -36,6 +36,8 @@ void mmu_ln_setentry(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,
 
   //DEBUGASSERT(ptlevel > 0 && ptlevel <= RV_MMU_PT_LEVELS);
 
+  printf("[MMU] set entry: lvl: %X lnnAddr %X phAddr %X vAddr %X fl %X\n", ptlevel, lnvaddr, paddr, vaddr, mmuflags);
+
   /* Test if this is a leaf PTE, if it is, set A+D even if they are not used
    * by the implementation.
    *

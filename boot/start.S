@@ -8,8 +8,8 @@
 
 #include <asm/asm.h>
 
-    .section .text.enter
-    .global _start, start_entry, uart_write
+    .section .text.enter , "ax"
+    .global _start, start_entry
 
 _start:
 
