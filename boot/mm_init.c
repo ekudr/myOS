@@ -101,7 +101,6 @@ static void slab_init(uintptr_t start)
       g_slabs[i].memory = (void *)start;
       sq_addlast((sq_entry_t *)&g_slabs[i], (sq_queue_t *)&g_free_slabs);
       start += RV_MMU_PAGE_SIZE;
-      printf("[MMU] slab added to pool addr %X", start);
     }
 }
 
@@ -149,17 +148,21 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
   npages = (size + RV_MMU_PAGE_MASK) >> RV_MMU_PAGE_SHIFT;
   endaddr = vaddr + size;
 
+printf("[MMU] Kernel mapping %X pages, end address 0x%lX\n", npages, endaddr);
+
   for (i = 0; i < npages; i += RV_MMU_PAGE_ENTRIES)
     {
       /* See if a mapping exists */
 
       pbase = mmu_pte_to_paddr(mmu_ln_getentry(KMM_SPBASE_IDX,
                                                KMM_SPBASE, vaddr));
+printf("[MMU] Pbase %X needed\n", pbase);                                                
       if (!pbase)
         {
           /* No, allocate 1 page, this must not fail */
 
           pbase = slab_alloc();
+    printf("[MMU] Pbase %X allocated new\n", pbase);      
 //          DEBUGASSERT(pbase);
 
           /* Map it to the new table */
