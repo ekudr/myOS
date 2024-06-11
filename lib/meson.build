@@ -1,6 +1,7 @@
 
 lib_sources = [
     'string.c',
+    'printf.c',
 ]
 
 libc_a = static_library(

@@ -2,5 +2,7 @@
 #define _CONFIG_H
 
 #define VERSION_STR "@version@"
+#define CONFIG_MP_NUM_CPUS 4    /* JH7110 */
+#define CONFIG_NUM_TASKS        64  /* maximum number of processes */ 
 
 #endif /* _CONFIG_H */

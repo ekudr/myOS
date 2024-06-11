@@ -1,5 +1,6 @@
 #include <common.h>
 #include <sbi_ecall_interface.h>
+#include <string.h>
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -84,6 +85,7 @@ int boot_start(void)
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
 
     mm_init();
+    tasks_init();
 
     while (1) {}
     return 0;
