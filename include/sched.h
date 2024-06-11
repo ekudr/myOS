@@ -81,7 +81,7 @@ struct trapframe {
 
 // Per-CPU state.
 struct cpu {
-  struct task *proc;          // The process running on this cpu, or null.
+  struct task *task;          // The process running on this cpu, or null.
   struct context context;     // swtch() here to enter scheduler().
   int noff;                   // Depth of push_off() nesting.
   int intena;                 // Were interrupts enabled before push_off()?

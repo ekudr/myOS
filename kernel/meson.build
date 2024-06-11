@@ -2,7 +2,7 @@
 kernel_sources = [
     'sched.c',
     'spinlock.c',
-    'switch',
+    'switch.S',
 ]
 
 kernel_a = static_library(

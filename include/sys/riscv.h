@@ -32,6 +32,16 @@ static inline uint64 r_mhartid()
   return x;
 }
 
+// flush the TLB.
+static inline void sfence_vma()
+{
+  // the zero, zero means flush all TLB entries.
+  asm volatile("sfence.vma zero, zero");
+}
+
+typedef uint64 pte_t;
+typedef uint64 *pagetable_t; // 512 PTEs
+
 // read and write tp, the thread pointer, which xv6 uses to hold
 // this core's hartid (core number), the index into cpus[].
 static inline uint64

@@ -50,6 +50,15 @@ typedef _int32_t    int32_t;
 typedef _uint64_t   uint64_t;
 typedef _int64_t    int64_t;
 
+typedef _uint8_t    uint8;
+typedef _int8_t     int8;
+typedef _uint16_t   uint16;
+typedef _int16_t    int16;
+typedef _uint32_t   uint32;
+typedef _int32_t    int32;
+typedef _uint64_t   uint64;
+typedef _int64_t    int64;
+
 typedef __u8	u8;
 typedef __u16	u16;
 typedef __u32	u32;
