@@ -2,6 +2,7 @@
 #include <common.h>
 #include <spinlock.h>
 
+
 void initlock(struct spinlock *lk, char *name)
 {
   lk->name = name;
