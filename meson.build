@@ -16,6 +16,7 @@ c_args = [
 
 
 subdir('include')
+subdir('lib')
 subdir('boot')
 
 
