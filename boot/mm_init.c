@@ -101,6 +101,7 @@ static void slab_init(uintptr_t start)
       g_slabs[i].memory = (void *)start;
       sq_addlast((sq_entry_t *)&g_slabs[i], (sq_queue_t *)&g_free_slabs);
       start += RV_MMU_PAGE_SIZE;
+      printf("[MMU] slab added to pool addr %X", start);
     }
 }
 
