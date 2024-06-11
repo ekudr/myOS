@@ -5,7 +5,7 @@ kernel_sources = [
     'switch',
 ]
 
-libc_a = static_library(
+kernel_a = static_library(
     'kernel.a',
     sources: kernel_sources,
     include_directories: [
