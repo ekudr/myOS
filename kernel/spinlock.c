@@ -2,6 +2,27 @@
 #include <common.h>
 #include <spinlock.h>
 
+void push_off(void)
+{
+  int old = intr_get();
+
+  intr_off();
+  if(mycpu()->noff == 0)
+    mycpu()->intena = old;
+  mycpu()->noff += 1;
+}
+
+void pop_off(void)
+{
+  struct cpu *c = mycpu();
+  if(intr_get())
+    printf("[SHED] pop_off - interruptible \n");
+  if(c->noff < 1)
+    printf("[SHED] Lock pop_off\n");
+  c->noff -= 1;
+  if(c->noff == 0 && c->intena)
+    intr_on();
+}
 
 void initlock(struct spinlock *lk, char *name)
 {
@@ -76,24 +97,3 @@ int holding(struct spinlock *lk)
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
 
-void push_off(void)
-{
-  int old = intr_get();
-
-  intr_off();
-  if(mycpu()->noff == 0)
-    mycpu()->intena = old;
-  mycpu()->noff += 1;
-}
-
-void pop_off(void)
-{
-  struct cpu *c = mycpu();
-  if(intr_get())
-    printf("[SHED] pop_off - interruptible \n");
-  if(c->noff < 1)
-    printf("[SHED] Lock pop_off\n");
-  c->noff -= 1;
-  if(c->noff == 0 && c->intena)
-    intr_on();
-}
