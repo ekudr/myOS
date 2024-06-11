@@ -34,7 +34,7 @@
 /* DDR start address */
 
 #define JH7110_DDR_BASE   (0x40200000)
-#define JH7110_DDR_SIZE   (0x40000000)
+#define JH7110_DDR_SIZE   (0x200000000)
 
 /* Kernel code memory (RX) */
 
