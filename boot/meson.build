@@ -38,5 +38,11 @@ boot_elf = executable(
         '-static',
         linker_script_flags,
     ],
-    link_depends: linker_script_deps,
+    link_with: [
+        libc_a,
+    ],
+    link_depends: [
+        linker_script_deps,
+        libc_a
+    ],
 )
