@@ -55,8 +55,10 @@ SECTIONS
      /* Page tables here, align to 4K boundary */
 
     .pgtables (NOLOAD) : ALIGN(0x1000) {
+        _pgtable_start = .;
         *(.pgtables)
         . = ALIGN(4);
+        _pgtable_end = .;
     } :data
 
     /* Stack top */
