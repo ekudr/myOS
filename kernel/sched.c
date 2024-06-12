@@ -1,7 +1,7 @@
 #include <common.h>
 #include <sched.h>
 #include <spinlock.h>
-#include <sys/riscv.h>
+#include <rv_mmu.h>
 
 
 struct cpu cpus[CONFIG_MP_NUM_CPUS];
