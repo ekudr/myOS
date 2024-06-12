@@ -34,11 +34,9 @@
 
 /* Physical and virtual addresses to page tables (vaddr = paddr mapping) */
 
-#define PGT_L1_PBASE    g_kernel_pgt_pbase
 #define PGT_L2_PBASE    m_l2_pgtable
 #define PGT_L3_PBASE    (uintptr_t)&m_l3_pgtable
-#define PGT_L1_VBASE    PGT_L1_PBASE
-#define PGT_L2_VBASE    PGT_L2_PBASE
+
 #define PGT_L3_VBASE    PGT_L3_PBASE
 
 
@@ -49,7 +47,7 @@
 #define KMM_PAGE_SIZE   RV_MMU_L3_PAGE_SIZE
 #define KMM_PBASE       PGT_L3_PBASE   
 #define KMM_PBASE_IDX   3   
-#define KMM_SPBASE      PGT_L2_PBASE
+
 #define KMM_SPBASE_IDX  2
 
 
@@ -63,15 +61,12 @@ typedef struct pgalloc_slab_s pgalloc_slab_t;
 
 /* Kernel mappings simply here, mapping is vaddr=paddr */
 
-static size_t         m_l1_pgtable[PGT_L1_SIZE] locate_data(".pgtables");
+
 static uintptr_t        m_l2_pgtable;
 static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 
 #define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
 
-/* Kernel mappings (L1 base) */
-
-uintptr_t               g_kernel_mappings  = PGT_L1_VBASE;
 
 
 uintptr_t   mem_start;
@@ -160,7 +155,7 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
       /* See if a mapping exists */
 
       pbase = mmu_pte_to_paddr(mmu_ln_getentry(KMM_SPBASE_IDX,
-                                               KMM_SPBASE, vaddr));                                               
+                                               m_l2_pgtable, vaddr));                                               
       if (!pbase)
         {
           /* No, allocate 1 page, this must not fail */
@@ -171,7 +166,7 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
 
           /* Map it to the new table */
 
-          mmu_ln_setentry(KMM_SPBASE_IDX, KMM_SPBASE, pbase, vaddr,
+          mmu_ln_setentry(KMM_SPBASE_IDX, m_l2_pgtable, pbase, vaddr,
                           MMU_UPGT_FLAGS);
         }
 
@@ -212,7 +207,7 @@ void kernel_mapping(void) {
 
   printf("[MMU] map I/O regions\n");
 
-  mmu_ln_map_region(1, PGT_L1_VBASE, MMU_IO_BASE, MMU_IO_BASE,
+  mmu_ln_map_region(1, g_kernel_pgt_pbase, MMU_IO_BASE, MMU_IO_BASE,
                     MMU_IO_SIZE, MMU_IO_FLAGS);
 
   /* Map the kernel text and data for L2/L3 */
@@ -225,12 +220,12 @@ void kernel_mapping(void) {
   /* Connect the L1 and L2 page tables for the kernel text and data */
 
   printf("[MMU] connect the L1 and L2 page tables\n");
-  mmu_ln_setentry(1, PGT_L1_VBASE, PGT_L2_PBASE, KSRAM_START, PTE_G);
+  mmu_ln_setentry(1, g_kernel_pgt_pbase, m_l2_pgtable, KSRAM_START, PTE_G);
 
   /* Map the page pool */
 
   printf("[MMU] map the page pool\n");
-  mmu_ln_map_region(2, PGT_L2_VBASE, PGPOOL_START, PGPOOL_START, PGPOOL_SIZE,
+  mmu_ln_map_region(2, m_l2_pgtable, PGPOOL_START, PGPOOL_START, PGPOOL_SIZE,
                     MMU_KDATA_FLAGS);
 }
 
