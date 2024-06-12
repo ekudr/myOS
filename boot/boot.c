@@ -63,10 +63,8 @@ int boot_start(void)
 {
 
     /* Prepare the bss memory region */
-    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
+//    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
 
-    /* Prepare the page tables memory region */
-    memset(&_pgtable_start, 0, (&_pgtable_end - &_pgtable_start));
 
     /* Crashing the screen image. test :) */
     int x = 0;

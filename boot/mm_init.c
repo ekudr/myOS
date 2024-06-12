@@ -35,9 +35,7 @@
 /* Physical and virtual addresses to page tables (vaddr = paddr mapping) */
 
 #define PGT_L2_PBASE    m_l2_pgtable
-#define PGT_L3_PBASE    (uintptr_t)&m_l3_pgtable
 
-#define PGT_L3_VBASE    PGT_L3_PBASE
 
 
 #define PGT_L1_SIZE     (512)  /* Enough to map 512 GiB */
@@ -45,7 +43,7 @@
 #define PGT_L3_SIZE     (1024) /* Enough to map 4 MiB (2MiB x 2) */
 
 #define KMM_PAGE_SIZE   RV_MMU_L3_PAGE_SIZE
-#define KMM_PBASE       PGT_L3_PBASE   
+ 
 #define KMM_PBASE_IDX   3   
 
 #define KMM_SPBASE_IDX  2
@@ -63,7 +61,6 @@ typedef struct pgalloc_slab_s pgalloc_slab_t;
 
 
 static uintptr_t        m_l2_pgtable;
-static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 
 #define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
 
@@ -73,54 +70,7 @@ uintptr_t   mem_start;
 uintptr_t   mem_end;
 
 
-/* L3 page table allocator */
 
-static sq_queue_t       g_free_slabs;
-static pgalloc_slab_t   g_slabs[SLAB_COUNT];
-
-
-/****************************************************************************
- * Name: slab_init
- *
- * Description:
- *   Initialize slab allocator for L2 or L3 page table entries
- *
- * L2 Page table is used for SV32. L3 used for SV39
- *
- * Input Parameters:
- *   start - Beginning of the L2 or L3 page table pool
- *
- ****************************************************************************/
-
-static void slab_init(uintptr_t start)
-{
-  int i;
-
-  sq_init(&g_free_slabs);
-
-  for (i = 0; i < SLAB_COUNT; i++)
-    {
-      g_slabs[i].memory = (void *)start;
-      sq_addlast((sq_entry_t *)&g_slabs[i], (sq_queue_t *)&g_free_slabs);
-      start += RV_MMU_PAGE_SIZE;
-    }
-}
-
-/****************************************************************************
- * Name: slab_alloc
- *
- * Description:
- *   Allocate single slab for L2/L3 page table entry
- *
- * L2 Page table is used for SV32. L3 used for SV39
- *
- ****************************************************************************/
-
-static uintptr_t slab_alloc(void)
-{
-  pgalloc_slab_t *slab = (pgalloc_slab_t *)sq_remfirst(&g_free_slabs);
-  return slab ? (uintptr_t)slab->memory : 0;
-}
 
 /****************************************************************************
  * Name: map_region
@@ -184,11 +134,6 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
 
 void kernel_mapping(void) {
 
-  /* Initialize slab allocator for the L2/L3 page tables */
-
-//  slab_init(KMM_PBASE);
-//  printf("[MMU] Kernel memory tables base address 0x%lX\n", KMM_PBASE);
-
  
   /* Allocate page for L1 */
   g_kernel_pgt_pbase = pg_alloc();
@@ -196,13 +141,14 @@ void kernel_mapping(void) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
   }
+  printf("[MMU] Page 0x%lX allocated for L1 table\n", g_kernel_pgt_pbase);
   /* Allocate page for L2 */
   m_l2_pgtable = pg_alloc();
   if (!m_l2_pgtable) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
   }
-
+  printf("[MMU] Page 0x%lX allocated for L2 table\n", m_l2_pgtable);  
     /* Map I/O region, use enough large page tables for the IO region. */
 
   printf("[MMU] map I/O regions\n");
