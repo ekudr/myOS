@@ -85,7 +85,10 @@ int boot_start(void)
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
 
     mm_init();
+
+    printf("[SCHED] init tasks ...");
     tasks_init();
+    printf("Done\n");
 
     while (1) {}
     return 0;
