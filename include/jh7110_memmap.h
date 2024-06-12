@@ -54,7 +54,7 @@
 #define PGPOOL_END      (PGPOOL_START + PGPOOL_SIZE)
 
 
-#define KSTART     (uintptr_t)__start
+#define KSTART      (uintptr_t)__start
 #define STACK_TOP       (uintptr_t)__stack_top
 #define BSS_START     (uintptr_t)__bss_start
 #define BSS_END       (uintptr_t)__bss_end
@@ -75,5 +75,10 @@ extern uint8_t          __ksram_end[];
 
 extern uint8_t          __pgheap_start[];
 extern uint8_t          __pgheap_size[];
+
+extern uint8_t      __start[];
+extern uint8_t      __stack_top[];
+extern uint8_t      __bss_start[];
+extern uint8_t      __bss_end[];
 
 #endif /* _JH7110_MEMMAP_H */
