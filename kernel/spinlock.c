@@ -1,6 +1,7 @@
 
 #include <common.h>
 #include <spinlock.h>
+#include <sched.h>
 
 void push_off(void)
 {
