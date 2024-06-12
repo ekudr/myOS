@@ -75,6 +75,10 @@ uintptr_t               g_kernel_pgt_pbase = PGT_L1_PBASE;
 uintptr_t   mem_start;
 uintptr_t   mem_end;
 
+extern uintptr_t _bss_start, _bss_end;
+extern uintptr_t _pgtable_start, _pgtable_end;
+extern uintptr_t _start, _stack_top;
+
 /* L3 page table allocator */
 
 static sq_queue_t       g_free_slabs;
