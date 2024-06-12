@@ -26,7 +26,7 @@ void pg_free_range(void *pa_start, void *pa_end)
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + RV_MMU_PAGE_SIZE <= (char*)pa_end; p += RV_MMU_PAGE_SIZE)
-    kfree(p);
+    pg_free(p);
 }
 
 // Free the page of physical memory pointed at by pa,
