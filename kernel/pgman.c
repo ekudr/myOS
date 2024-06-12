@@ -4,7 +4,7 @@
 #include <jh7110_memmap.h>
 #include <spinlock.h>
 
-
+extern uintptr_t   mem_start, mem_end;
 
 
 struct sq_entry_s pg_run;  
@@ -59,7 +59,7 @@ void * pg_alloc(void)
   struct sq_entry_s *r;
 
   acquire(&pg_pool.lock);
-  r = page_pool.free;
+  r = pg_pool.free;
   if(r)
     pg_pool.free = r->flink;
   release(&pg_pool.lock);
