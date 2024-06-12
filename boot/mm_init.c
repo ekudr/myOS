@@ -23,6 +23,7 @@
 #include <queue.h>
 #include <jh7110_memmap.h>
 #include <spinlock.h>
+#include <mmu.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -33,8 +34,8 @@
 
 /* Physical and virtual addresses to page tables (vaddr = paddr mapping) */
 
-#define PGT_L1_PBASE    (uintptr_t)&m_l1_pgtable
-#define PGT_L2_PBASE    (uintptr_t)&m_l2_pgtable
+#define PGT_L1_PBASE    g_kernel_pgt_pbase
+#define PGT_L2_PBASE    m_l2_pgtable
 #define PGT_L3_PBASE    (uintptr_t)&m_l3_pgtable
 #define PGT_L1_VBASE    PGT_L1_PBASE
 #define PGT_L2_VBASE    PGT_L2_PBASE
@@ -63,7 +64,7 @@ typedef struct pgalloc_slab_s pgalloc_slab_t;
 /* Kernel mappings simply here, mapping is vaddr=paddr */
 
 static size_t         m_l1_pgtable[PGT_L1_SIZE] locate_data(".pgtables");
-static size_t         m_l2_pgtable[PGT_L2_SIZE] locate_data(".pgtables");
+uintptr_t        m_l2_pgtable;
 static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 
 #define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
@@ -71,7 +72,7 @@ static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 /* Kernel mappings (L1 base) */
 
 uintptr_t               g_kernel_mappings  = PGT_L1_VBASE;
-uintptr_t               g_kernel_pgt_pbase = PGT_L1_PBASE;
+
 
 uintptr_t   mem_start;
 uintptr_t   mem_end;
@@ -164,7 +165,7 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
         {
           /* No, allocate 1 page, this must not fail */
 
-          pbase = slab_alloc();
+          pbase = pg_alloc();
              
 //          DEBUGASSERT(pbase);
 
@@ -190,8 +191,22 @@ void kernel_mapping(void) {
 
   /* Initialize slab allocator for the L2/L3 page tables */
 
-  slab_init(KMM_PBASE);
-  printf("[MMU] Kernel memory tables base address 0x%lX\n", KMM_PBASE);
+//  slab_init(KMM_PBASE);
+//  printf("[MMU] Kernel memory tables base address 0x%lX\n", KMM_PBASE);
+
+ 
+  /* Allocate page for L1 */
+  g_kernel_pgt_pbase = pg_alloc();
+  if (!g_kernel_pgt_pbase) {
+    printf("[MMU] Can NOT allocate page\n");
+    while (1) {}
+  }
+  /* Allocate page for L2 */
+  m_l2_pgtable = pg_alloc();
+  if (!m_l2_pgtable) {
+    printf("[MMU] Can NOT allocate page\n");
+    while (1) {}
+  }
 
     /* Map I/O region, use enough large page tables for the IO region. */
 
@@ -205,6 +220,7 @@ void kernel_mapping(void) {
 
   printf("[MMU] map kernel\n");
   map_region(KSRAM_START, KSRAM_START, KSRAM_SIZE, MMU_KDATA_FLAGS);
+
 
   /* Connect the L1 and L2 page tables for the kernel text and data */
 

@@ -22,6 +22,9 @@
 #include <rv_mmu.h>
 #include <printf.h>
 
+uintptr_t   g_kernel_pgt_pbase;
+
+
 static const size_t g_pgt_sizes[] =
 {
     RV_MMU_L1_PAGE_SIZE, RV_MMU_L2_PAGE_SIZE, RV_MMU_L3_PAGE_SIZE
