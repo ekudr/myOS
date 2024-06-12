@@ -15,9 +15,10 @@ struct {
 /* Init free pages pool*/
 void pg_pool_init(void *start, void *end)
 {
-  initlock(&pg_pool.lock, "pgmem");
-  pg_pool.free = 0;
-  pg_free_range(start, end);
+    initlock(&pg_pool.lock, "pgmem");
+    pg_pool.free = 0;
+    pg_free_range(start, end);
+    printf("[MMU] Memory map: first Free memory page: 0x%lX\n", pg_pool.free);
 }
 
 void pg_free_range(void *pa_start, void *pa_end)

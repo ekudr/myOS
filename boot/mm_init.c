@@ -83,8 +83,6 @@ static sq_queue_t       g_free_slabs;
 static pgalloc_slab_t   g_slabs[SLAB_COUNT];
 
 
-
-
 /****************************************************************************
  * Name: slab_init
  *
@@ -236,7 +234,6 @@ void mm_init(void) {
 
   pg_pool_init(mem_start, mem_end);
 
-  printf("[MMU] Memory map: first Free memory page: 0x%lX\n", pg_pool.free);
 
   kernel_mapping();
 
