@@ -7,11 +7,9 @@
 extern uintptr_t   mem_start, mem_end;
 
 
-struct sq_entry_s pg_run;  
-
 struct {
   struct spinlock lock;
-  struct pg_run *free;
+  struct sq_entry_s *free;
 } pg_pool;
 
 /* Init free pages pool*/
