@@ -234,7 +234,7 @@ void mm_init(void) {
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
-  pg_pool_init((mem_start, mem_end);
+  pg_pool_init(mem_start, mem_end);
 
   printf("[MMU] Memory map: first Free memory page: 0x%lX\n", pg_pool.free);
 
