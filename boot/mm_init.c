@@ -296,9 +296,11 @@ void mm_init(void) {
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
-    kernel_mapping();
+  k_mem_init();
 
-    printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_pbase);
-    mmu_enable(g_kernel_pgt_pbase, 0);
-    printf("[MMU] init is Done\n");
+  kernel_mapping();
+
+  printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_pbase);
+  mmu_enable(g_kernel_pgt_pbase, 0);
+  printf("[MMU] init is Done\n");
 }
