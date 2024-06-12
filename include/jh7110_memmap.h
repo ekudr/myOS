@@ -76,9 +76,9 @@ extern uint8_t          __ksram_end[];
 extern uint8_t          __pgheap_start[];
 extern uint8_t          __pgheap_size[];
 
-extern uint8_t      __start[];
-extern uint8_t      __stack_top[];
-extern uint8_t      __bss_start[];
-extern uint8_t      __bss_end[];
+extern uint8_t      _start[];
+extern uint8_t      _stack_top[];
+extern uint8_t      _bss_start[];
+extern uint8_t      _bss_end[];
 
 #endif /* _JH7110_MEMMAP_H */

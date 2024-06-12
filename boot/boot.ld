@@ -21,10 +21,6 @@ __ksram_end = ORIGIN(ksram) + LENGTH(ksram);
 __pgheap_start = ORIGIN(pgram);
 __pgheap_size = LENGTH(pgram);
 
-__bss_start = ORIGIN(_bss_start);
-__bss_end = ORIGIN(_bss_end);
-__start = ORIGIN(_start);
-__stack_top = ORIGIN(_stack_top);
 
 PHDRS
 {
