@@ -118,7 +118,6 @@ void kfree(void *pa)
   struct mem_run *r;
 
   if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
-    printf("kfree 0x%lX ",pa);
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, RV_MMU_PAGE_SIZE);
@@ -294,9 +293,13 @@ void mm_init(void) {
   mem_start = (uintptr_t)(PGROUNDUP((uint64)STACK_TOP) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS);
   mem_end = (uintptr_t)(JH7110_DDR_BASE + JH7110_DDR_SIZE) ;
 
+  mem_end = 0x40F00000;  // limit for debuging
+
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
   k_mem_init();
+
+  printf("[MMU] Memory map: first Free memory page: 0x%lX\n", k_mem.freelist);
 
   kernel_mapping();
 
