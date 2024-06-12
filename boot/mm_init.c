@@ -81,6 +81,73 @@ uintptr_t   mem_end;
 static sq_queue_t       g_free_slabs;
 static pgalloc_slab_t   g_slabs[SLAB_COUNT];
 
+
+
+struct mem_run {
+  struct mem_run *next;
+};
+
+struct {
+  struct spinlock lock;
+  struct mem_run *freelist;
+} k_mem;
+
+/* Init kernel free memory */
+void k_mem_init()
+{
+  initlock(&k_mem.lock, "kmem");
+  k_mem.freelist = 0;
+  freerange(mem_start, mem_end);
+}
+
+void freerange(void *pa_start, void *pa_end)
+{
+  char *p;
+  p = (char*)PGROUNDUP((uint64)pa_start);
+  for(; p + RV_MMU_PAGE_SIZE <= (char*)pa_end; p += RV_MMU_PAGE_SIZE)
+    kfree(p);
+}
+
+// Free the page of physical memory pointed at by pa,
+// which normally should have been returned by a
+// call to kalloc().  (The exception is when
+// initializing the allocator; see kinit above.)
+void kfree(void *pa)
+{
+  struct mem_run *r;
+
+  if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < end || (uint64)pa >= mem_end)
+    printf("kfree 0x%lX ",pa);
+
+  // Fill with junk to catch dangling refs.
+  memset(pa, 1, RV_MMU_PAGE_SIZE);
+
+  r = (struct run*)pa;
+
+  acquire(&k_mem.lock);
+  r->next = k_mem.freelist;
+  k_mem.freelist = r;
+  release(&k_mem.lock);
+}
+
+// Allocate one 4096-byte page of physical memory.
+// Returns a pointer that the kernel can use.
+// Returns 0 if the memory cannot be allocated.
+void * kalloc(void)
+{
+  struct mem_run *r;
+
+  acquire(&k_mem.lock);
+  r = k_mem.freelist;
+  if(r)
+    k_mem.freelist = r->next;
+  release(&k_mem.lock);
+
+  if(r)
+    memset((char*)r, 5, RV_MMU_PAGE_SIZE); // fill with junk
+  return (void*)r;
+}
+
 /****************************************************************************
  * Name: slab_init
  *
