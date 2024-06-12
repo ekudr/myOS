@@ -22,7 +22,7 @@
 #include <rv_mmu.h>
 #include <printf.h>
 
-uintptr_t   g_kernel_pgt_pbase;
+static uintptr_t   g_kernel_pgt_pbase;
 
 
 static const size_t g_pgt_sizes[] =

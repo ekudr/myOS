@@ -64,7 +64,7 @@ typedef struct pgalloc_slab_s pgalloc_slab_t;
 /* Kernel mappings simply here, mapping is vaddr=paddr */
 
 static size_t         m_l1_pgtable[PGT_L1_SIZE] locate_data(".pgtables");
-uintptr_t        m_l2_pgtable;
+static uintptr_t        m_l2_pgtable;
 static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 
 #define SLAB_COUNT      (sizeof(m_l3_pgtable) / RV_MMU_PAGE_SIZE)
