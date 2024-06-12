@@ -34,7 +34,7 @@ void pg_free_range(void *pa_start, void *pa_end)
 // initializing the allocator; see kinit above.)
 void pg_free(void *pa)
 {
-  struct pg_run *r;
+  struct sq_entry_s *r;
 
   if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
 
