@@ -22,6 +22,7 @@
 #include <rv_mmu.h>
 #include <queue.h>
 #include <jh7110_memmap.h>
+#include <spinlock.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -116,7 +117,7 @@ void kfree(void *pa)
 {
   struct mem_run *r;
 
-  if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < end || (uint64)pa >= mem_end)
+  if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
     printf("kfree 0x%lX ",pa);
 
   // Fill with junk to catch dangling refs.
