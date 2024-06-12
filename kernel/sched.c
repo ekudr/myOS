@@ -7,6 +7,17 @@ struct cpu cpus[CONFIG_MP_NUM_CPUS];
 
 struct task tasks[CONFIG_NUM_TASKS];
 
+struct task *inittask;
+
+int nextpid = 1;
+struct spinlock pid_lock;
+
+// helps ensure that wakeups of wait()ing
+// parents are not lost. helps obey the
+// memory model when using p->parent.
+// must be acquired before any p->lock.
+struct spinlock wait_lock;
+
 // initialize the tasks table.
 void tasks_init(void)
 {
