@@ -4,7 +4,6 @@
 #define _SYS_RISCV_H
 
 
-#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 
 // Supervisor Status Register, sstatus
 
