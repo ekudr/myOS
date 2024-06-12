@@ -28,7 +28,7 @@
 #define RV_MMU_PAGE_SIZE        (1 << RV_MMU_PAGE_SHIFT) /* 4K pages */
 #define RV_MMU_PAGE_MASK        (RV_MMU_PAGE_SIZE - 1)
 
-#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+#define PGROUNDUP(sz)  (((sz)+RV_MMU_PAGE_SIZE-1) & ~(RV_MMU_PAGE_SIZE-1))
 
 /* Entries per PGT */
 
