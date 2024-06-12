@@ -75,9 +75,6 @@ uintptr_t               g_kernel_pgt_pbase = PGT_L1_PBASE;
 uintptr_t   mem_start;
 uintptr_t   mem_end;
 
-extern uintptr_t _bss_start, _bss_end;
-extern uintptr_t _pgtable_start, _pgtable_end;
-extern uintptr_t _start, _stack_top;
 
 /* L3 page table allocator */
 
@@ -221,12 +218,12 @@ void kernel_mapping(void) {
 
 void mm_init(void) {
 
-  printf("[MMU] Memory map: Kernel start = 0x%lX\n", _start);  
-  printf("[MMU] Memory map: BSS: 0x%lX -> 0x%lX\n", _bss_start, _bss_end);
-  printf("[MMU] Memory map: PG Table: 0x%lX -> 0x%X\n", _pgtable_start, _pgtable_end);
-  printf("[MMU] Memory map: Stack top: 0x%lX\n", _stack_top);
+  printf("[MMU] Memory map: Kernel start = 0x%lX\n", KSTART);  
+  printf("[MMU] Memory map: BSS: 0x%lX -> 0x%lX\n", BSS_START, BSS_END);
+//  printf("[MMU] Memory map: PG Table: 0x%lX -> 0x%X\n", _pgtable_start, _pgtable_end);
+  printf("[MMU] Memory map: Stack top: 0x%lX\n", STACK_TOP);
 
-  mem_start = (uintptr_t)(PGROUNDUP((uint64)_stack_top) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS);
+  mem_start = (uintptr_t)(PGROUNDUP((uint64)STACK_TOP) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS);
   mem_end = (uintptr_t)(JH7110_DDR_BASE + JH7110_DDR_SIZE) ;
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);

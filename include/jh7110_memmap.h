@@ -54,6 +54,12 @@
 #define PGPOOL_END      (PGPOOL_START + PGPOOL_SIZE)
 
 
+#define KSTART     (uintptr_t)__start
+#define STACK_TOP       (uintptr_t)__stack_top
+#define BSS_START     (uintptr_t)__bss_start
+#define BSS_END       (uintptr_t)__bss_end
+
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
