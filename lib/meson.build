@@ -2,6 +2,7 @@
 lib_sources = [
     'string.c',
     'printf.c',
+    'sq_remfirst.c',
 ]
 
 libc_a = static_library(

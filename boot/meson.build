@@ -4,8 +4,6 @@ boot_sources = [
     'boot.c',
     'uart.c',
     'mm_init.c',
-    'mmu.c',
-    'sq_remfirst.c',
 ]
 
 linker_scripts = [

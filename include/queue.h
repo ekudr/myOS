@@ -303,6 +303,7 @@ struct sq_entry_s
 {
   struct sq_entry_s *flink;
 };
+
 typedef struct sq_entry_s sq_entry_t;
 
 struct dq_entry_s
