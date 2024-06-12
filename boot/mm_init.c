@@ -72,6 +72,9 @@ static size_t         m_l3_pgtable[PGT_L3_SIZE] locate_data(".pgtables");
 uintptr_t               g_kernel_mappings  = PGT_L1_VBASE;
 uintptr_t               g_kernel_pgt_pbase = PGT_L1_PBASE;
 
+uintptr_t   mem_start;
+uintptr_t   mem_end;
+
 /* L3 page table allocator */
 
 static sq_queue_t       g_free_slabs;
@@ -213,6 +216,16 @@ void kernel_mapping(void) {
 }
 
 void mm_init(void) {
+
+  printf("[MMU] Memory map: Kernel start = 0x%lX\n", _start);  
+  printf("[MMU] Memory map: BSS: 0x%lX -> 0x%lX\n", _bss_start, _bss_end);
+  printf("[MMU] Memory map: PG Table: 0x%lX -> 0x%X\n", _pgtable_start, _pgtable_end);
+  printf("[MMU] Memory map: Stack top: 0x%lX\n", _stack_top);
+
+  mem_start = (uintptr_t)(PGROUNDUP((uint64)_stack_top) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS);
+  mem_end = (uintptr_t)(JH7110_DDR_BASE + JH7110_DDR_SIZE) ;
+
+  printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
     kernel_mapping();
 

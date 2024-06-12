@@ -3,6 +3,9 @@
 #ifndef _SYS_RISCV_H
 #define _SYS_RISCV_H
 
+
+#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+
 // Supervisor Status Register, sstatus
 
 #define SSTATUS_SPP (1L << 8)  // Previous mode, 1=Supervisor, 0=User
