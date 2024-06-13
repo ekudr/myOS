@@ -83,8 +83,8 @@
 #define RV_MMU_VADDR_SHIFT(_n)  (RV_MMU_PAGE_SHIFT + RV_MMU_VPN_WIDTH * \
                                  (RV_MMU_PT_LEVELS - (_n)))
 
-#define PGROUNDUP(sz)           (((sz)+PGSIZE-1) & ~(PGSIZE-1))
-#define PGROUNDDOWN(a)          (((a)) & ~(PGSIZE-1))
+#define PGROUNDUP(sz)           (((sz)+RV_MMU_PAGE_SIZE-1) & ~(RV_MMU_PAGE_SIZE-1))
+#define PGROUNDDOWN(a)          (((a)) & ~(RV_MMU_PAGE_SIZE-1))
 
 /* Sv39 has:
  * - 4K page size

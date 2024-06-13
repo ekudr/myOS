@@ -18,7 +18,7 @@
  *
  ****************************************************************************/
 
-#include <stdint.h>
+#include <common.h>
 #include <rv_mmu.h>
 #include <printf.h>
 
@@ -48,7 +48,7 @@ pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
   uintptr_t lntable = pagetable;
 printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
-  if(va >= MAXVA)
+  if(vaddr >= MAXVA)
     panic("[MMU] Scan mem tables out of range Sv39");
     
   for (int level = 1; level < 4; level++) {
@@ -77,7 +77,7 @@ printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vadd
 // be page-aligned. Returns 0 on success, -1 if walk() couldn't
 // allocate a needed page-table page.
 
-int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paaddr, uint64_t mmuflags)
+int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paddr, uint64_t mmuflags)
 {
   uint64_t a, last;
   pte_t *pte;
@@ -98,7 +98,7 @@ printf("[MMU] mmu_map_pages walk returned pte: 0x%lX\n", pte);
     if(*pte & PTE_VALID)
       panic("[MMU] mmu_map_pages: remap");
 
-    *pte = mmu_paddr_to_pte(pa) | mmuflags | PTE_VALID;
+    *pte = mmu_paddr_to_pte(paddr) | mmuflags | PTE_VALID;
 
     if (a == last)
       break;
