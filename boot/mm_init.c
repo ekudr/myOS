@@ -139,7 +139,7 @@ void kernel_mapping(void) {
  
   /* Allocate page for L1 */
   g_kernel_pgt_base = pg_alloc();
-  if (!g_kernel_gt_pbase) {
+  if (!g_kernel_pgt_base) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
   }
