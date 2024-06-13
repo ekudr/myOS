@@ -21,6 +21,7 @@
 #include <common.h>
 #include <rv_mmu.h>
 #include <printf.h>
+#include <sys/riscv.h>
 
 uintptr_t   g_kernel_pgt_base;
 
@@ -104,7 +105,7 @@ printf("[MMU] mmu_map_pages walk returned pte: 0x%lX\n", pte);
       break;
 
     a += RV_MMU_PAGE_SIZE;
-    pa += RV_MMU_PAGE_SIZE;
+    paddr += RV_MMU_PAGE_SIZE;
   }
   
   return 0;
