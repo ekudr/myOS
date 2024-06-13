@@ -1,7 +1,7 @@
 #ifndef _MMU_H
 #define _MMU_H
 
-extern uintptr_t   g_kernel_pgt_pbase;
+extern uintptr_t   g_kernel_pgt_base;
 
 void * pg_alloc(void);
 void pg_free(void *pa);

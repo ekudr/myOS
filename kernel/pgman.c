@@ -40,7 +40,7 @@ void pg_free(void *pa)
   if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
 
   // Fill with junk to catch dangling refs.
-  memset(pa, 1, RV_MMU_PAGE_SIZE);
+ // memset(pa, 1, RV_MMU_PAGE_SIZE);
 
   r = (struct sq_entry_s*)pa;
 
@@ -64,6 +64,6 @@ void * pg_alloc(void)
   release(&pg_pool.lock);
 
   if(r)
-    memset((char*)r, 0, RV_MMU_PAGE_SIZE); // fill with junk
+//    memset((char*)r, 5, RV_MMU_PAGE_SIZE); // fill with junk
   return (void*)r;
 }

@@ -83,6 +83,9 @@
 #define RV_MMU_VADDR_SHIFT(_n)  (RV_MMU_PAGE_SHIFT + RV_MMU_VPN_WIDTH * \
                                  (RV_MMU_PT_LEVELS - (_n)))
 
+#define PGROUNDUP(sz)           (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+#define PGROUNDDOWN(a)          (((a)) & ~(PGSIZE-1))
+
 /* Sv39 has:
  * - 4K page size
  * - 3 page table levels
@@ -300,6 +303,30 @@ static inline uintptr_t mmu_pte_to_paddr(uintptr_t pte)
   paddr <<= RV_MMU_PTE_PPN_SHIFT; /* Move to correct position */
   return paddr;
 }
+
+/****************************************************************************
+ * Name: mmu_paddr_to_pte
+ *
+ * Description:
+ *   Convert physical address to PTE
+ *
+ * Input Parameters:
+ *   pa - physical address
+ *
+ * Returned Value:
+ *   PTE
+ *
+ ****************************************************************************/
+
+static inline uintptr_t mmu_paddr_to_pte(uintptr_t pa) {
+
+  uintptr_t pte = pa;
+  pte >>= RV_MMU_PAGE_SHIFT;      /* Convert to pages */
+  pte <<= RV_MMU_PTE_PADDR_SHIFT; /* Move to correct position */
+  return pte;
+}
+
+
 
 /****************************************************************************
  * Name: mmu_satp_to_paddr

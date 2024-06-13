@@ -111,7 +111,8 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
           /* No, allocate 1 page, this must not fail */
 
           pbase = pg_alloc();
-             
+          memset(pbase, 0, RV_MMU_PAGE_SIZE);
+
 //          DEBUGASSERT(pbase);
 
           /* Map it to the new table */
@@ -134,45 +135,53 @@ static void map_region(uintptr_t paddr, uintptr_t vaddr, size_t size,
 
 void kernel_mapping(void) {
 
+  int status;
  
   /* Allocate page for L1 */
-  g_kernel_pgt_pbase = pg_alloc();
-  if (!g_kernel_pgt_pbase) {
+  g_kernel_pgt_base = pg_alloc();
+  if (!g_kernel_gt_pbase) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
   }
-  printf("[MMU] Page 0x%lX allocated for L1 table\n", g_kernel_pgt_pbase);
+  memset(g_kernel_pgt_base, 0, RV_MMU_PAGE_SIZE);
+
   /* Allocate page for L2 */
   m_l2_pgtable = pg_alloc();
   if (!m_l2_pgtable) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
   }
-  printf("[MMU] Page 0x%lX allocated for L2 table\n", m_l2_pgtable);  
+  memset(m_l2_pgtable, 0, RV_MMU_PAGE_SIZE);
+
     /* Map I/O region, use enough large page tables for the IO region. */
 
   printf("[MMU] map I/O regions\n");
 
-  mmu_ln_map_region(1, g_kernel_pgt_pbase, MMU_IO_BASE, MMU_IO_BASE,
+  mmu_ln_map_region(1, g_kernel_pgt_base, MMU_IO_BASE, MMU_IO_BASE,
                     MMU_IO_SIZE, MMU_IO_FLAGS);
 
   /* Map the kernel text and data for L2/L3 */
 
 
   printf("[MMU] map kernel\n");
-  map_region(KSRAM_START, KSRAM_START, KSRAM_SIZE, MMU_KDATA_FLAGS);
+  map_region(KSTART, KSTART, KSRAM_SIZE, MMU_KDATA_FLAGS);
 
 
   /* Connect the L1 and L2 page tables for the kernel text and data */
 
   printf("[MMU] connect the L1 and L2 page tables\n");
-  mmu_ln_setentry(1, g_kernel_pgt_pbase, m_l2_pgtable, KSRAM_START, PTE_G);
+  mmu_ln_setentry(1, g_kernel_pgt_base, m_l2_pgtable, KSTART, PTE_G);
 
   /* Map the page pool */
 
   printf("[MMU] map the page pool\n");
-  mmu_ln_map_region(2, m_l2_pgtable, PGPOOL_START, PGPOOL_START, PGPOOL_SIZE,
-                    MMU_KDATA_FLAGS);
+
+  status = mmu_map_pages(g_kernel_pgt_base, mem_start, mem_end-mem_start, mem_start, MMU_KDATA_FLAGS);
+
+  printf("[MMU] map the page pool status %lX\n", status);
+
+//  mmu_ln_map_region(2, m_l2_pgtable, mem_start, mem_start, mem_end-mem_start,
+//                    MMU_KDATA_FLAGS);
 }
 
 void mm_init(void) {
@@ -194,7 +203,7 @@ void mm_init(void) {
 
   kernel_mapping();
 
-  printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_pbase);
-  mmu_enable(g_kernel_pgt_pbase, 0);
+  printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
+  mmu_enable(g_kernel_pgt_base, 0);
   printf("[MMU] init is Done\n");
 }

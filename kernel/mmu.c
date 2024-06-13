@@ -22,13 +22,93 @@
 #include <rv_mmu.h>
 #include <printf.h>
 
-uintptr_t   g_kernel_pgt_pbase;
+uintptr_t   g_kernel_pgt_base;
 
 
 static const size_t g_pgt_sizes[] =
 {
     RV_MMU_L1_PAGE_SIZE, RV_MMU_L2_PAGE_SIZE, RV_MMU_L3_PAGE_SIZE
 };
+
+/* Return the address of the PTE in page table pagetable
+*  that corresponds to virtual address va.  If alloc!=0,
+*  create any required page-table pages.
+* 
+*  The risc-v Sv39 scheme has three levels of page-table
+*   pages. A page-table page contains 512 64-bit PTEs.
+*   A 64-bit virtual address is split into five fields:
+*     39..63 -- must be zero.
+*     30..38 -- 9 bits of level-2 index.
+*     21..29 -- 9 bits of level-1 index.
+*     12..20 -- 9 bits of level-0 index.
+*      0..11 -- 12 bits of byte offset within the page.
+*/ 
+
+pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
+
+  uintptr_t lntable = pagetable;
+printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
+  if(va >= MAXVA)
+    panic("[MMU] Scan mem tables out of range Sv39");
+    
+  for (int level = 1; level < 4; level++) {
+
+    pte_t *pte = mmu_ln_getentry(level, lntable, vaddr);
+    printf("[MMU] mmu_walk check pte level: 0x%lX vAddr: 0x%lX pTable: 0x%lX\n", level, vaddr, lntable);
+
+    if ( *pte & PTE_VALID ) {
+        lntable = mmu_pte_to_paddr(mmu_ln_getentry(level, lntable, vaddr)); 
+        printf("[MMU] mmu_walk next PgTable: 0x%lX vAddr: 0x%lX level: 0x%lX size: 0x%lX\n", lntable, vaddr, level);      
+    } else {
+        if(!alloc || ( lntable = pg_alloc()) == 0)
+          return 0;
+        memset(lntable, 0, RV_MMU_PAGE_SIZE);
+        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", lntable);
+        *pte = mmu_paddr_to_pte(lntable) | PTE_VALID;
+        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", lntable, pte);
+      }
+  }
+
+  return &lntable[(vaddr >> RV_MMU_VADDR_SHIFT(3))& RV_MMU_VPN_MASK];
+}
+
+// Create PTEs for virtual addresses starting at vAddr that refer to
+// physical addresses starting at pAddr. vaddr and size might not
+// be page-aligned. Returns 0 on success, -1 if walk() couldn't
+// allocate a needed page-table page.
+
+int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paaddr, uint64_t mmuflags)
+{
+  uint64_t a, last;
+  pte_t *pte;
+
+  if (size == 0) 
+    panic("[MMU] mmu_map_pages: zero size");
+  
+  a = PGROUNDDOWN(vaddr);
+  last = PGROUNDDOWN(vaddr + size - 1);
+  
+  printf("[MMU] mmu_map_pages  PgTable: 0x%lX vAddr: 0x%lX pAddr: 0x%lX size: 0x%lX\n", pagetable, vaddr, paddr, size);
+
+  for (;;) {
+
+    if ((pte = mmu_walk_tbls(pagetable, a, 1)) == 0)
+      return -1;
+printf("[MMU] mmu_map_pages walk returned pte: 0x%lX\n", pte);
+    if(*pte & PTE_VALID)
+      panic("[MMU] mmu_map_pages: remap");
+
+    *pte = mmu_paddr_to_pte(pa) | mmuflags | PTE_VALID;
+
+    if (a == last)
+      break;
+
+    a += RV_MMU_PAGE_SIZE;
+    pa += RV_MMU_PAGE_SIZE;
+  }
+  
+  return 0;
+}
 
 
 void mmu_ln_setentry(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,

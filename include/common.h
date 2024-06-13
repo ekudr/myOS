@@ -14,6 +14,8 @@ void _putchar(char character);
 void lib_putc(char ch);
 void lib_puts(char *s);
 
+void panic(char*) __attribute__((noreturn));
+
 
 
 #endif /* _COMMON_H */

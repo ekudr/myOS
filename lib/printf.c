@@ -912,3 +912,15 @@ int fctprintf(void (*out)(char character, void* arg), void* arg, const char* for
   va_end(va);
   return ret;
 }
+
+
+void panic(char *s)
+{
+
+  printf("panic: ");
+  printf(s);
+  printf("\n");
+
+  for(;;)
+    ;
+}
