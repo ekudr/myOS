@@ -164,7 +164,7 @@ void kernel_mapping(void) {
 
 
   printf("[MMU] map kernel\n");
-  map_region(KSTART, KSTART, mem_start-KSRAM, MMU_KDATA_FLAGS);
+  map_region(KSTART, KSTART, mem_start-KSTART, MMU_KDATA_FLAGS);
 
 
   /* Connect the L1 and L2 page tables for the kernel text and data */
