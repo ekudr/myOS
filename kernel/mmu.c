@@ -50,7 +50,7 @@ pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
   uintptr_t lntable = pagetable;
   uintptr_t newtable;
 
-printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
+//  printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
   if(vaddr >= MAXVA)
     panic("[MMU] Scan mem tables out of range Sv39");
     
@@ -58,19 +58,19 @@ printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vadd
 
     pte_t pte = mmu_ln_getentry(level, lntable, vaddr);
     
-    printf("[MMU] mmu_walk check pte = 0x%lX level: 0x%lX vAddr: 0x%lX pTable: 0x%lX\n", pte, level, vaddr, lntable);
+//    printf("[MMU] mmu_walk check pte = 0x%lX level: 0x%lX vAddr: 0x%lX pTable: 0x%lX\n", pte, level, vaddr, lntable);
 
     if ( pte & PTE_VALID ) {
         lntable = mmu_pte_to_paddr(mmu_ln_getentry(level, lntable, vaddr)); 
-        printf("[MMU] mmu_walk next PgTable: 0x%lX vAddr: 0x%lX level: 0x%lX\n", lntable, vaddr, level);      
+//        printf("[MMU] mmu_walk next PgTable: 0x%lX vAddr: 0x%lX level: 0x%lX\n", lntable, vaddr, level);      
     } else {
         if(!alloc || ( newtable = pg_alloc()) == 0)
           return 0;
         memset(newtable, 0, RV_MMU_PAGE_SIZE);
-        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", newtable);
+//        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", newtable);
         
         mmu_ln_setentry(level, lntable, newtable, newtable, PTE_G);
-        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", newtable, pte);
+//        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", newtable, pte);
         lntable = newtable;
       }
   }
@@ -94,7 +94,7 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
   a = PGROUNDDOWN(vaddr);
   last = PGROUNDDOWN(vaddr + size - 1);
   
-  printf("[MMU] mmu_map_pages  PgTable: 0x%lX vAddr: 0x%lX pAddr: 0x%lX size: 0x%lX\n", pagetable, vaddr, paddr, size);
+//  printf("[MMU] mmu_map_pages  PgTable: 0x%lX vAddr: 0x%lX pAddr: 0x%lX size: 0x%lX\n", pagetable, vaddr, paddr, size);
 
   for (;;) {
 

@@ -91,7 +91,7 @@ void kernel_mapping(void) {
 
   status = mmu_map_pages(g_kernel_pgt_base, mem_start, mem_end-mem_start, mem_start, MMU_KDATA_FLAGS);
 
-  printf("[MMU] map the page pool status %lX\n", status);
+//  printf("[MMU] map the page pool status %lX\n", status);
 
 }
 
@@ -111,8 +111,14 @@ void mm_init(void) {
 
   pg_pool_init(mem_start, mem_end);
 
-
   kernel_mapping();
+
+  for (int i=0; i<512; i++) {
+    uintptr_t *tlb = (uintptr_t *)g_kernel_pgt_base;
+    if (tlb[i])
+    printf("[MMU] tlb: memory table pte: 0x%lX -> 0x%lX\n", &tlb[i], tlb[i]);
+  }
+
 
   printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
   mmu_enable(g_kernel_pgt_base, 0);
