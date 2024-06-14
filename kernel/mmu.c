@@ -48,7 +48,7 @@ static const size_t g_pgt_sizes[] =
 pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
   uintptr_t lntable = pagetable;
-  uintptr_t newpable;
+  uintptr_t newtable;
 
 printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
   if(vaddr >= MAXVA)
@@ -69,7 +69,7 @@ printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vadd
         memset(newtable, 0, RV_MMU_PAGE_SIZE);
         printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", newtable);
         
-        mmu_ln_setentry(level, lnvaddr, newtable, newtable, PTE_G);
+        mmu_ln_setentry(level, lntable, newtable, newtable, PTE_G);
         printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", newtable, pte);
         lntable = newtable;
       }
@@ -100,7 +100,7 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
 
     if ((pte = mmu_walk_tbls(pagetable, a, 1)) == 0)
       return -1;
-printf("[MMU] mmu_map_pages walk returned pte: 0x%lX\n", pte);
+    printf("[MMU] mmu_map_pages walk returned pte: 0x%lX = 0x%lX\n", pte, *pte);
     if(*pte & PTE_VALID)
       panic("[MMU] mmu_map_pages: remap");
 
