@@ -45,9 +45,10 @@ static const size_t g_pgt_sizes[] =
 *      0..11 -- 12 bits of byte offset within the page.
 */ 
 
-pte_t *mmu_walk_tbls(uintptr_t *pagetable, uintptr_t vaddr, int alloc) {
+pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
-  uintptr_t *lntable = pagetable;
+  uintptr_t lntable = pagetable;
+  uintptr_t newpable;
 
 printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vaddr);
   if(vaddr >= MAXVA)
@@ -55,24 +56,26 @@ printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vadd
     
   for (int level = 1; level < 4; level++) {
 
-    pte_t *pte = mmu_ln_getentry(level, lntable, vaddr);
+    pte_t pte = mmu_ln_getentry(level, lntable, vaddr);
     
-    printf("[MMU] mmu_walk check pte entry 0x%lX = 0x%lX level: 0x%lX vAddr: 0x%lX pTable: 0x%lX\n", pte, *pte, level, vaddr, lntable);
+    printf("[MMU] mmu_walk check pte = 0x%lX level: 0x%lX vAddr: 0x%lX pTable: 0x%lX\n", pte, level, vaddr, lntable);
 
-    if ( *pte & PTE_VALID ) {
+    if ( pte & PTE_VALID ) {
         lntable = mmu_pte_to_paddr(mmu_ln_getentry(level, lntable, vaddr)); 
         printf("[MMU] mmu_walk next PgTable: 0x%lX vAddr: 0x%lX level: 0x%lX\n", lntable, vaddr, level);      
     } else {
-        if(!alloc || ( lntable = pg_alloc()) == 0)
+        if(!alloc || ( newtable = pg_alloc()) == 0)
           return 0;
-        memset(lntable, 0, RV_MMU_PAGE_SIZE);
-        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", lntable);
-        *pte = mmu_paddr_to_pte(lntable) | PTE_VALID;
-        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", lntable, pte);
+        memset(newtable, 0, RV_MMU_PAGE_SIZE);
+        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", newtable);
+        
+        mmu_ln_setentry(level, lnvaddr, newtable, newtable, PTE_G);
+        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", newtable, pte);
+        lntable = newtable;
       }
   }
 
-  return (pte_t *)&lntable[(vaddr >> RV_MMU_VADDR_SHIFT(3))& RV_MMU_VPN_MASK];
+  return (pte_t *)(lntable + ((vaddr >> RV_MMU_VADDR_SHIFT(3))& RV_MMU_VPN_MASK));
 }
 
 // Create PTEs for virtual addresses starting at vAddr that refer to
