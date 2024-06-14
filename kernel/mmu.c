@@ -54,7 +54,7 @@ printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, vadd
   if(vaddr >= MAXVA)
     panic("[MMU] Scan mem tables out of range Sv39");
     
-  for (int level = 1; level < 4; level++) {
+  for (int level = 1; level < 3; level++) {
 
     pte_t pte = mmu_ln_getentry(level, lntable, vaddr);
     
