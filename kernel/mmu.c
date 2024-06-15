@@ -69,7 +69,7 @@ uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
         memset(newtable, 0, RV_MMU_PAGE_SIZE);
 //        printf("[MMU] mmu_walk allocate new PgTable: 0x%lX\n", newtable);
         
-        mmu_ln_setentry(level, lntable, newtable, newtable, PTE_G);
+        mmu_ln_setentry(level, lntable, newtable, vaddr, PTE_G);
 //        printf("[MMU] mmu_walk new PgTable: 0x%lX old pte: 0x%lX\n", newtable, pte);
         lntable = newtable;
       }
