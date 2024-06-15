@@ -103,8 +103,11 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
 //    if ( == 0)
 //      return -1;
 //    printf("[MMU] mmu_map_pages walk returned pte: 0x%lX = 0x%lX\n", pte, *pte);
-    if(mmu_ln_getentry(3, lntable, a) & PTE_VALID)
+    if(mmu_ln_getentry(3, lntable, a) & PTE_VALID) {
+      printf("[MMU] mmu_map_pages: remap tbl: 0x%lx, vAddr: 0x%lX, pte: 0x%lx\n", lntable, a, mmu_ln_getentry(3, lntable, a));
       panic("[MMU] mmu_map_pages: remap");
+    }
+      
 
     mmu_ln_setentry(3, lntable, paddr, a, mmuflags | PTE_G);
 
