@@ -113,12 +113,30 @@ void mm_init(void) {
 
   kernel_mapping();
 
+ printf("----------------------------------------------\n");
   for (int i=0; i<512; i++) {
     uintptr_t *tlb = (uintptr_t *)g_kernel_pgt_base;
     if (tlb[i])
     printf("[MMU] tlb: memory table pte: 0x%lX -> 0x%lX\n", &tlb[i], tlb[i]);
   }
-
+ printf("----------------------------------------------\n");
+  for (int i=0; i<512; i++) {
+    uintptr_t *tlb = (uintptr_t *)0x40EFE000;
+    if (tlb[i])
+    printf("[MMU] tlb: memory table pte: 0x%lX -> 0x%lX\n", &tlb[i], tlb[i]);
+  }
+   printf("----------------------------------------------\n");
+  for (int i=0; i<512; i++) {
+    uintptr_t *tlb = (uintptr_t *)0x40EFD000;
+    if (tlb[i])
+    printf("[MMU] tlb: memory table pte: 0x%lX -> 0x%lX\n", &tlb[i], tlb[i]);
+  }
+   printf("----------------------------------------------\n");
+  for (int i=0; i<512; i++) {
+    uintptr_t *tlb = (uintptr_t *)0x40EFC000;
+    if (tlb[i])
+    printf("[MMU] tlb: memory table pte: 0x%lX -> 0x%lX\n", &tlb[i], tlb[i]);
+  }
 
   printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
   mmu_enable(g_kernel_pgt_base, 0);

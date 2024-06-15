@@ -45,7 +45,7 @@ static const size_t g_pgt_sizes[] =
 *      0..11 -- 12 bits of byte offset within the page.
 */ 
 
-pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
+uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
   uintptr_t lntable = pagetable;
   uintptr_t newtable;
@@ -75,7 +75,7 @@ pte_t *mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
       }
   }
 
-  return (pte_t *)(lntable + ((vaddr >> RV_MMU_VADDR_SHIFT(3))& RV_MMU_VPN_MASK));
+  return lntable;
 }
 
 // Create PTEs for virtual addresses starting at vAddr that refer to
@@ -87,6 +87,7 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
 {
   uint64_t a, last;
   pte_t *pte;
+  uintptr_t lntable;
 
   if (size == 0) 
     panic("[MMU] mmu_map_pages: zero size");
@@ -97,14 +98,15 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
 //  printf("[MMU] mmu_map_pages  PgTable: 0x%lX vAddr: 0x%lX pAddr: 0x%lX size: 0x%lX\n", pagetable, vaddr, paddr, size);
 
   for (;;) {
-
-    if ((pte = mmu_walk_tbls(pagetable, a, 1)) == 0)
-      return -1;
-    printf("[MMU] mmu_map_pages walk returned pte: 0x%lX = 0x%lX\n", pte, *pte);
-    if(*pte & PTE_VALID)
+    
+    lntable = mmu_walk_tbls(pagetable, a, 1);
+//    if ( == 0)
+//      return -1;
+//    printf("[MMU] mmu_map_pages walk returned pte: 0x%lX = 0x%lX\n", pte, *pte);
+    if(mmu_ln_getentry(3, lntable, a) & PTE_VALID)
       panic("[MMU] mmu_map_pages: remap");
 
-    *pte = mmu_paddr_to_pte(paddr) | mmuflags | PTE_VALID;
+    mmu_ln_setentry(3, lntable, paddr, a, mmuflags | PTE_G);
 
     if (a == last)
       break;
