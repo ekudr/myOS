@@ -86,7 +86,7 @@ int boot_start(void)
 
     printf("[SCHED] init tasks ...");
     tasks_init();
-    printf("Done\n");
+    printf("Done.\n");
 
     while (1) {}
     return 0;

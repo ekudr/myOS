@@ -13,6 +13,23 @@ struct task *inittask;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+
+// Allocate a page for each process's kernel stack.
+// Map it high in memory, followed by an invalid
+// guard page.
+void sched_map_stacks(uintptr_t g_kernel_pgt_base)
+{
+  struct task *t;
+  
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
+    char *pg = pg_alloc();
+    if(pg == 0)
+      panic("[SCHED] can't allocate pg_alloc");
+    uint64_t va = KSTACK((int) (t - tasks));
+    mmu_map_pages(g_kernel_pgt_base, va, (uint64_t)pg, RV_MMU_PAGE_SIZE, PTE_R | PTE_W);
+  }
+}
+
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
 // memory model when using p->parent.
