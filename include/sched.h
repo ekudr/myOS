@@ -34,7 +34,7 @@ struct context {
   uint64 s9;
   uint64 s10;
   uint64 s11;
-} context_t;
+};
 
 // per-process data for the trap handling code in trampoline.S.
 // sits in a page by itself just under the trampoline page in the
