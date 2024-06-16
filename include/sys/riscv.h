@@ -3,7 +3,8 @@
 #ifndef _SYS_RISCV_H
 #define _SYS_RISCV_H
 
-
+typedef uint64 pte_t;
+typedef uint64 *pagetable_t; // 512 PTEs
 
 // Supervisor Status Register, sstatus
 
@@ -25,55 +26,69 @@ static inline void w_sstatus(uint64 x)
   asm volatile("csrw sstatus, %0" : : "r" (x));
 }
 
+// Supervisor Trap-Vector Base Address
+// low two bits are mode.
+static inline void w_stvec(uint64 x) {
+  asm volatile("csrw stvec, %0" : : "r" (x));
+}
 
-// which hart (core) is this?
-static inline uint64 r_mhartid()
-{
+static inline uint64 r_stvec() {
   uint64 x;
-  asm volatile("csrr %0, mhartid" : "=r" (x) );
+  asm volatile("csrr %0, stvec" : "=r" (x) );
   return x;
 }
 
-// flush the TLB.
-static inline void sfence_vma()
-{
-  // the zero, zero means flush all TLB entries.
-  asm volatile("sfence.vma zero, zero");
+// supervisor exception program counter, holds the
+// instruction address to which a return from
+// exception will go.
+static inline void w_sepc(uint64 x) {
+  asm volatile("csrw sepc, %0" : : "r" (x));
 }
 
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t; // 512 PTEs
+static inline uint64 r_sepc() {
+  uint64 x;
+  asm volatile("csrr %0, sepc" : "=r" (x) );
+  return x;
+}
+
+// Supervisor Trap Cause
+static inline uint64 r_scause() {
+  uint64 x;
+  asm volatile("csrr %0, scause" : "=r" (x) );
+  return x;
+}
+
+// Supervisor Trap Value
+static inline uint64 r_stval() {
+  uint64 x;
+  asm volatile("csrr %0, stval" : "=r" (x) );
+  return x;
+}
 
 // read and write tp, the thread pointer, which xv6 uses to hold
 // this core's hartid (core number), the index into cpus[].
-static inline uint64
-r_tp()
-{
+static inline uint64 r_tp() {
   uint64 x;
   asm volatile("mv %0, tp" : "=r" (x) );
   return x;
 }
 
-static inline void w_tp(uint64 x)
-{
+static inline void w_tp(uint64 x) {
   asm volatile("mv tp, %0" : : "r" (x));
 }
 
 // enable device interrupts
-static inline void intr_on()
-{
+static inline void intr_on() {
   w_sstatus(r_sstatus() | SSTATUS_SIE);
 }
 
 // disable device interrupts
-static inline void intr_off()
-{
+static inline void intr_off() {
   w_sstatus(r_sstatus() & ~SSTATUS_SIE);
 }
 
 // are device interrupts enabled?
-static inline int intr_get()
-{
+static inline int intr_get() {
   uint64 x = r_sstatus();
   return (x & SSTATUS_SIE) != 0;
 }

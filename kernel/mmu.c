@@ -86,7 +86,6 @@ uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paddr, uint64_t mmuflags)
 {
   uint64_t a, last;
-  pte_t *pte;
   uintptr_t lntable;
 
   if (size == 0) 

@@ -114,7 +114,7 @@ void mm_init(void) {
   kernel_mapping();
 
   printf("[MMU] mmu_init: Init tasks stacks ... ");
-  sched_map_stacks();
+  sched_map_stacks(g_kernel_pgt_base);
   printf("Done.\n");
 
   printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);

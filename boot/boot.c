@@ -84,8 +84,12 @@ int boot_start(void)
 
     mm_init();
 
-    printf("[SCHED] init tasks ...");
+    printf("[SCHED] init tasks ... ");
     tasks_init();
+    printf("Done.\n");
+
+	printf("[PLIC] init interrupts ... ");
+	plic_init();
     printf("Done.\n");
 
     while (1) {}

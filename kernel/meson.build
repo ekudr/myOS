@@ -5,6 +5,9 @@ kernel_sources = [
     'switch.S',
     'pgman.c',
     'mmu.c',
+    'trac.c',
+    'kernelvec.S',
+    'plic.c',
 ]
 
 kernel_a = static_library(
