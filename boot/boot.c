@@ -95,6 +95,7 @@ int boot_start(void)
 	plic_init();
     printf("Done.\n");
 
-    while (1) {}
-    return 0;
+	__sync_synchronize();
+	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
+	scheduler(); 
 }
