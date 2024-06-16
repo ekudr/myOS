@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <config.h>
 #include <printf.h>
+#include <string.h>
 
 
 #define locate_data(n) __attribute__((section(n)))
@@ -16,6 +17,6 @@ void lib_puts(char *s);
 
 void panic(char*) __attribute__((noreturn));
 
-void memset(void *b, int c, int len);
+//void memset(void *b, int c, int len);
 
 #endif /* _COMMON_H */

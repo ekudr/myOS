@@ -12,6 +12,9 @@ static char* version = VERSION_STR;
 #define FB	(u8*)0xfe000000
 #define FB_LEN	1920*1080
 
+void plic_init(void); 
+void tasks_init(void);
+void mm_init(void);
 
 
 void memset(void *b, int c, int len)

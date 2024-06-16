@@ -64,7 +64,6 @@ void * pg_alloc(void)
     pg_pool.free = r->flink;
   release(&pg_pool.lock);
 
-  if(r)
-//    memset((char*)r, 5, RV_MMU_PAGE_SIZE); // fill with junk
+//  if(r)  memset((char*)r, 5, RV_MMU_PAGE_SIZE); // fill with junk
   return (void*)r;
 }

@@ -65,7 +65,7 @@ void kernel_mapping(void) {
   int status;
  
   /* Allocate page for L1 */
-  g_kernel_pgt_base = pg_alloc();
+  g_kernel_pgt_base = (uintptr_t)pg_alloc();
   if (!g_kernel_pgt_base) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
@@ -85,13 +85,15 @@ void kernel_mapping(void) {
 
   printf("[MMU] map kernel\n");
   status = mmu_map_pages(g_kernel_pgt_base,KSTART, mem_start-KSTART, KSTART, MMU_KDATA_FLAGS);
-
+    if (status)
+      panic("[MMU] map_init: can not map");
   /* Map the page pool */
 
   printf("[MMU] map the page pool\n");
 
   status = mmu_map_pages(g_kernel_pgt_base, mem_start, mem_end-mem_start, mem_start, MMU_KDATA_FLAGS);
-
+    if (status)
+      panic("[MMU] map_init: can not map");
 //  printf("[MMU] map the page pool status %lX\n", status);
 
 }
