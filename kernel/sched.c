@@ -18,17 +18,19 @@ struct spinlock pid_lock;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void sched_map_stacks(uintptr_t g_kernel_pgt_base)
+void sched_map_stacks(uintptr_t pgt_base)
 {
   struct task *t;
   int status;
   
   for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
-    uintptr_t pg = pg_alloc();
+    uintptr_t pg = (uintptr_t)pg_alloc();
     if(pg == 0)
       panic("[SCHED] can't allocate pg_alloc");
     uint64_t va = KSTACK((int) (t - tasks));
-    status = mmu_map_pages(g_kernel_pgt_base, va, RV_MMU_PAGE_SIZE, (uint64_t)pg, PTE_R | PTE_W);
+    status = mmu_map_pages(pgt_base, va, RV_MMU_PAGE_SIZE, (uint64_t)pg, PTE_R | PTE_W);
+    if (status)
+      panic("[SCHED] sched_map_stacks: can not map");
   }
 }
 
@@ -45,7 +47,7 @@ void tasks_init(void)
   
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
-  for(t = tasks; t < &tasks[NTASKS]; t++) {
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
       initlock(&t->lock, "task");
       t->state = UNUSED;
       t->kstack = KSTACK((int) (t - tasks));
@@ -55,7 +57,7 @@ void tasks_init(void)
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
 // to a different CPU.
-int cpuid() {
+int cpuid(void) {
   int id = r_tp();
   return id;
 }
@@ -93,7 +95,7 @@ void scheduler(void) {
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    for(t = tasks; p < &tasks[NPROC]; t++) {
+    for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
       acquire(&t->lock);
       if(t->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
@@ -122,7 +124,7 @@ void scheduler(void) {
 // there's no process.
 void sched(void) {
   int intena;
-  struct task *t = myproc();
+  struct task *t = mytask();
 
   if(!holding(&t->lock))
     panic("sched t->lock");

@@ -5,7 +5,7 @@ kernel_sources = [
     'switch.S',
     'pgman.c',
     'mmu.c',
-    'trac.c',
+    'trap.c',
     'kernelvec.S',
     'plic.c',
 ]

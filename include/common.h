@@ -16,6 +16,6 @@ void lib_puts(char *s);
 
 void panic(char*) __attribute__((noreturn));
 
-
+void memset(void *b, int c, int len);
 
 #endif /* _COMMON_H */

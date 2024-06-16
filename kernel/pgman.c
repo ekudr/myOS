@@ -3,6 +3,7 @@
 #include <queue.h>
 #include <jh7110_memmap.h>
 #include <spinlock.h>
+#include <mmu.h>
 
 extern uintptr_t   mem_start, mem_end;
 

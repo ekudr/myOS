@@ -22,6 +22,7 @@
 #include <rv_mmu.h>
 #include <printf.h>
 #include <sys/riscv.h>
+#include <mmu.h>
 
 uintptr_t   g_kernel_pgt_base;
 

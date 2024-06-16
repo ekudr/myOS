@@ -24,6 +24,7 @@
 #include <jh7110_memmap.h>
 #include <spinlock.h>
 #include <mmu.h>
+#include <sched.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -109,7 +110,7 @@ void mm_init(void) {
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
-  pg_pool_init(mem_start, mem_end);
+  pg_pool_init((void *)mem_start, (void *)mem_end);
 
   kernel_mapping();
 

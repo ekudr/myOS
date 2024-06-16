@@ -10,7 +10,11 @@
 
 
 struct cpu* mycpu(void);
+int cpuid(void);
 struct task* mytask(void);
+void swtch(struct context*, struct context*);
+void yield(void);
+void sched_map_stacks(uintptr_t pgt_base);
 
 // Saved registers for kernel context switches.
 struct context {

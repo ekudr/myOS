@@ -1,6 +1,7 @@
 #include <common.h>
 #include <spinlock.h>
 #include <sys/riscv.h>
+#include <jh7110_memmap.h>
 
 //
 // the riscv Platform Level Interrupt Controller (PLIC).
