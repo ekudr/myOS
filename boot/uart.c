@@ -151,7 +151,7 @@ void lib_putc(char ch) {
 
 void _putchar(char character){
     if (character == '\n') uart_putc('\r');
-    uart_putc(character);   
+    lib_putc(character);   
 }
 
 void lib_puts(char *s) {
