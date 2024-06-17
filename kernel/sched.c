@@ -148,3 +148,51 @@ void yield(void) {
   sched();
   release(&t->lock);
 }
+
+// Atomically release lock and sleep on chan.
+// Reacquires lock when awakened.
+void sleep(void *chan, struct spinlock *lk)
+{
+  struct task *t = mytask();
+  
+  // Must acquire p->lock in order to
+  // change p->state and then call sched.
+  // Once we hold p->lock, we can be
+  // guaranteed that we won't miss any wakeup
+  // (wakeup locks p->lock),
+  // so it's okay to release lk.
+
+  acquire(&t->lock);  //DOC: sleeplock1
+  release(lk);
+
+  // Go to sleep.
+  t->chan = chan;
+  t->state = SLEEPING;
+
+  sched();
+
+  // Tidy up.
+  t->chan = 0;
+
+  // Reacquire original lock.
+  release(&t->lock);
+  acquire(lk);
+}
+
+// Wake up all processes sleeping on chan.
+// Must be called without any p->lock.
+void
+wakeup(void *chan)
+{
+  struct task *t;
+
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
+    if(t != mytask()){
+      acquire(&t->lock);
+      if(t->state == SLEEPING && t->chan == chan) {
+        t->state = RUNNABLE;
+      }
+      release(&t->lock);
+    }
+  }
+}

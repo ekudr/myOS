@@ -32,8 +32,16 @@
 #define REGB(base, offset) (ACCESS((unsigned char*)(base + (offset << UART0_REG_SHIFT))))
 
 
+#define UART_TX_BUF_SIZE 32
+char uart_tx_buf[UART_TX_BUF_SIZE];
+uint64_t uart_tx_w; // write next to uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE]
+uint64_t uart_tx_r; // read next from uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE]
+
 // the transmit output buffer.
 struct spinlock uart_tx_lock;
+
+void uart_start();
+
 
 void uart_init(void) {
   // disable interrupts.
@@ -63,11 +71,63 @@ void uart_init(void) {
 
 
 void uart_putc(char ch) {
-    acquire(&uart_tx_lock);
-    while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
-    REGW(UART0, UART_THR) = ch;
-    release(&uart_tx_lock);
+  acquire(&uart_tx_lock);
+
+  while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){
+    // buffer is full.
+    // wait for uartstart() to open up space in the buffer.
+    sleep(&uart_tx_r, &uart_tx_lock);
+  }
+
+  uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = c;
+  uart_tx_w += 1;
+  uart_start();
+  
+  release(&uart_tx_lock);
 }
+
+// if the UART is idle, and a character is waiting
+// in the transmit buffer, send it.
+// caller must hold uart_tx_lock.
+// called from both the top- and bottom-half.
+void uart_start(void) {
+
+  while(1){
+    if(uart_tx_w == uart_tx_r){
+      // transmit buffer is empty.
+      return;
+    }
+    
+    if((REGB(UART0, UART_LSR) & UART_LSR_TX_IDLE) == 0){
+      // the UART transmit holding register is full,
+      // so we cannot give it another byte.
+      // it will interrupt when it's ready for a new byte.
+      return;
+    }
+    
+    int c = uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE];
+    uart_tx_r += 1;
+    
+    // maybe uartputc() is waiting for space in the buffer.
+    wakeup(&uart_tx_r);
+    
+    REGB(UART0, UART_THR) = c;
+  }
+}
+
+
+// read one input character from the UART.
+// return -1 if none is waiting.
+int uart_getc(void) {
+  if(REGB(UART0, UART_LSR) & 0x01){
+    // input data is ready.
+    return REGB(UART0, UART_RHR);
+  } else {
+    return -1;
+  }
+}
+
+
 
 void lib_putc(char ch) {
     if (ch == '\n') uart_putc('\r');
@@ -82,4 +142,22 @@ void _putchar(char character){
 void lib_puts(char *s) {
     while (*s) lib_putc(*s++);
 
+}
+
+// handle a uart interrupt, raised because input has
+// arrived, or the uart is ready for more output, or
+// both. called from devintr().
+void uart_intr(void) {
+  // read and process incoming characters.
+  while(1){
+    int c = uart_getc();
+    if(c == -1)
+      break;
+//    console_intr(c);
+  }
+
+  // send buffered characters.
+  acquire(&uart_tx_lock);
+  uart_start();
+  release(&uart_tx_lock);
 }
