@@ -97,8 +97,8 @@ void uart_putc(char ch) {
   release(&uart_tx_lock);
   */
 
-      while ((REGW(UART, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
-    REGB(UART, UART_THR) = ch;
+      while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
+    REGB(UART0, UART_THR) = ch;
 }
 
 // if the UART is idle, and a character is waiting

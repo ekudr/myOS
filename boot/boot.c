@@ -1,6 +1,7 @@
 #include <common.h>
 #include <string.h>
 #include <sbi_ecall_interface.h>
+#include <sys/riscv.h> 
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -45,6 +46,8 @@ int boot_start(void)
 	*(FB+(i*4)+2) = x++;
 	*(FB+(i*4)+3) = 0x00;
     }
+
+	w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
     sbi_ecall_console_puts("\nTest SBI console output\n");
 

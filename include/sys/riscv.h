@@ -26,6 +26,32 @@ static inline void w_sstatus(uint64 x)
   asm volatile("csrw sstatus, %0" : : "r" (x));
 }
 
+// Supervisor Interrupt Pending
+static inline uint64 r_sip() {
+  uint64 x;
+  asm volatile("csrr %0, sip" : "=r" (x) );
+  return x;
+}
+
+static inline void w_sip(uint64 x) {
+  asm volatile("csrw sip, %0" : : "r" (x));
+}
+
+// Supervisor Interrupt Enable
+#define SIE_SEIE (1L << 9) // external
+#define SIE_STIE (1L << 5) // timer
+#define SIE_SSIE (1L << 1) // software
+static inline uint64 r_sie() {
+  uint64 x;
+  asm volatile("csrr %0, sie" : "=r" (x) );
+  return x;
+}
+
+static inline void w_sie(uint64 x) {
+  asm volatile("csrw sie, %0" : : "r" (x));
+}
+
+
 // Supervisor Trap-Vector Base Address
 // low two bits are mode.
 static inline void w_stvec(uint64 x) {
