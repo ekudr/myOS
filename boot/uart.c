@@ -79,7 +79,7 @@ void uart_putc(char ch) {
     sleep(&uart_tx_r, &uart_tx_lock);
   }
 
-  uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = c;
+  uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = ch;
   uart_tx_w += 1;
   uart_start();
   
