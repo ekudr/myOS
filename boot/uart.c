@@ -134,10 +134,10 @@ int uart_getc(void) {
 
  
 void lib_putc(char ch) {
-    if (uart_inited == 0x55555555) (
+    if (uart_inited == 0x55555555) {
         if (ch == '\n') uart_putc('\r');
         uart_putc(ch);
-    ) else {
+    } else {
         sbi_console_putc(ch);
     }
     
