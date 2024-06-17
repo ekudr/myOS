@@ -6,7 +6,7 @@
 #include <jh7110_memmap.h>
 
 struct spinlock tickslock;
-uint ticks;
+uint64_t ticks;
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
