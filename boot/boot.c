@@ -80,6 +80,8 @@ int boot_start(void)
 
     sbi_ecall_console_puts("\nTest SBI console output\n");
 
+	uart_init(void);
+
     lib_puts("myOS version ");
     lib_puts( version);
     lib_putc('\n');
