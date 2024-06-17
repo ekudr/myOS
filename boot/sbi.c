@@ -31,11 +31,5 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 	return ret;
 }
 
-static inline void sbi_ecall_console_puts(const char *str) {
-	sbi_ecall(SBI_EXT_DBCN, SBI_EXT_DBCN_CONSOLE_WRITE,
-		  sbi_strlen(str), (unsigned long)str, 0, 0, 0, 0);
-}
 
-static inline void sbi_console_putc(char ch) {
-    sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
-}
+

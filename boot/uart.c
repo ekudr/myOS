@@ -44,6 +44,10 @@ uint64_t uart_inited;
 
 void uart_start();
 
+static inline void sbi_console_putc(char ch) {
+    sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
+}
+
 
 void uart_init(void) {
   // disable interrupts.

@@ -24,7 +24,10 @@ void memset(void *b, int c, int len)
             *s++ = c;
     }
 
-
+static inline void sbi_ecall_console_puts(const char *str) {
+	sbi_ecall(SBI_EXT_DBCN, SBI_EXT_DBCN_CONSOLE_WRITE,
+		  sbi_strlen(str), (unsigned long)str, 0, 0, 0, 0);
+}
 
 int boot_start(void)
 {
