@@ -3,8 +3,10 @@
 #include <spinlock.h>
 #include <sys/riscv.h>
 #include <sched.h>
+#include <jh7110_memmap.h>
 
 struct spinlock tickslock;
+uint ticks;
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
