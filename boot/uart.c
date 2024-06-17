@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <spinlock.h>
 #include <jh7110_memmap.h>
+#include <sbi_ecall_interface.h>
 
 // the UART control registers.
 // some have different meanings for
