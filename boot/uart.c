@@ -40,6 +40,8 @@ uint64_t uart_tx_r; // read next from uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE]
 // the transmit output buffer.
 struct spinlock uart_tx_lock;
 
+uint64_t uart_inited;
+
 void uart_start();
 
 
@@ -67,6 +69,8 @@ void uart_init(void) {
   REGB(UART0, UART_IER) = UART_IER_TX_ENABLE | UART_IER_RX_ENABLE;
 
   initlock(&uart_tx_lock, "uart");
+
+  uart_inited = 0x55555555;
 }
 
 
@@ -128,10 +132,16 @@ int uart_getc(void) {
 }
 
 
-
+ 
 void lib_putc(char ch) {
-    if (ch == '\n') uart_putc('\r');
-    uart_putc(ch);
+    if (uart_inited == 0x55555555) (
+        if (ch == '\n') uart_putc('\r');
+        uart_putc(ch);
+    ) else {
+        sbi_console_putc(ch);
+    }
+    
+
 }
 
 void _putchar(char character){

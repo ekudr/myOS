@@ -4,6 +4,7 @@ boot_sources = [
     'boot.c',
     'uart.c',
     'mm_init.c',
+    'sbi.c',
 ]
 
 linker_scripts = [
