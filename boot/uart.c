@@ -80,6 +80,8 @@ void uart_init(void) {
 
 
 void uart_putc(char ch) {
+
+  /*  
   acquire(&uart_tx_lock);
 
   while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){
@@ -93,6 +95,10 @@ void uart_putc(char ch) {
   uart_start();
   
   release(&uart_tx_lock);
+  */
+
+      while ((REGW(UART, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
+    REGB(UART, UART_THR) = ch;
 }
 
 // if the UART is idle, and a character is waiting

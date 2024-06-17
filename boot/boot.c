@@ -48,11 +48,12 @@ int boot_start(void)
 
     sbi_ecall_console_puts("\nTest SBI console output\n");
 
+	uart_init();
 
     lib_puts("myOS version ");
     lib_puts( version);
     lib_putc('\n');
-	
+
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
 
     mm_init();
@@ -66,7 +67,7 @@ int boot_start(void)
     printf("Done.\n");
 
 	printf("[CONSOLE] init ... ");
-	uart_init();
+
 	printf("Done.\n");
 
 	__sync_synchronize();
