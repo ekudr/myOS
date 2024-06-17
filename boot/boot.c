@@ -1,5 +1,6 @@
 #include <common.h>
 #include <string.h>
+#include <sbi_ecall_interface.h>
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
