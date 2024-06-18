@@ -47,8 +47,9 @@ int boot_start(void)
 	*(FB+(i*4)+3) = 0x00;
     }
 
-	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, 100000, 0, 0, 0, 0, 0);
-	w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
+	sbi_init();
+//	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, 100000, 0, 0, 0, 0, 0);
+//	w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
     sbi_ecall_console_puts("\nTest SBI console output\n");
 

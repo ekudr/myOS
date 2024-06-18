@@ -1,6 +1,10 @@
 #include <sbi_ecall_interface.h>
 #include <string.h>
 
+
+/* default SBI version is 0.1 */
+unsigned long sbi_version = 0x1; 
+
 struct sbiret {
 	unsigned long error;
 	unsigned long value;
@@ -31,5 +35,18 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 	return ret;
 }
 
+static inline long sbi_get_version(void) {
+	return sbi_ecall(SBI_EXT_BASE_GET_SPEC_VERSION);
+}
 
+
+void sbi_init (void) {
+    int ret;
+
+    ret = sbi_get_version();
+
+    if (ret) sbi_version = ret;
+
+    printf("SBI version detected 0x%lX\n", sbi_version);
+}
 
