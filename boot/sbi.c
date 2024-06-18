@@ -1,4 +1,5 @@
 #include <sbi_ecall_interface.h>
+#include <common.h>
 #include <string.h>
 
 
