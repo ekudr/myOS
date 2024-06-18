@@ -36,7 +36,16 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 }
 
 static inline long sbi_get_version(void) {
-	return sbi_ecall(SBI_EXT_BASE_GET_SPEC_VERSION, 0, 0, 0, 0, 0, 0, 0);
+
+    struct sbiret ret;
+
+	ret = sbi_ecall(SBI_EXT_BASE, SBI_EXT_BASE_GET_SPEC_VERSION, 0, 0, 0, 0, 0, 0);
+
+	if (!ret.error)
+		return ret.value;
+	else
+		return -1;
+    
 }
 
 
