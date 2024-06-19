@@ -73,7 +73,7 @@ int boot_start(void)
 
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
-    w_sstatus(r_sstatus() | SSTATUS_SIE | (1 << 3));
+    w_sstatus(r_sstatus() | SSTATUS_SIE);
     w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     
     printf("Done.\n");
