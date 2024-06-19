@@ -49,6 +49,16 @@ static inline long sbi_get_version(void) {
     
 }
 
+static void sbi_set_timer(uint64_t stime_value) {
+#if __riscv_xlen == 32
+	sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, stime_value,
+		  stime_value >> 32, 0, 0, 0, 0);
+#else
+	sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, stime_value, 0,
+		  0, 0, 0, 0);
+#endif
+}
+
 
 void sbi_init (void) {
     int ret;
@@ -57,6 +67,8 @@ void sbi_init (void) {
 
     if (ret) sbi_version = ret;
 
-    printf("SBI version detected 0x%lX\n", sbi_version);
+    printf("SBI detected version %d.%d\n", (sbi_version >> 24) & 0x7f, sbi_version & 0x7f);
+
+    
 }
 

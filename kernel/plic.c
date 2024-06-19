@@ -14,6 +14,8 @@ void plic_init(void) {
   *(uint32*)(PLIC + VIRTIO0_IRQ*4) = 1;
 
   int hart = cpuid();
+
+  printf("[PLIC] enable interrapts for HART 0x%X\n"),;
   
   // set enable bits for this hart's S-mode
   // for the uart and virtio disk.
