@@ -28,6 +28,9 @@ void plic_init(void) {
 
   // set this hart's S-mode priority threshold to 0.
   *(uint32*)JH7110_PLIC_SPRIORITY(hart) = 0;
+
+  printf("[PLIC] enable 1 register 0x%lX\n",*(uint32*)(JH7110_PLIC_ENABLE1));
+  printf("[PLIC] enable 2 register 0x%lX\n",*(uint32*)(JH7110_PLIC_ENABLE2));
 }
 
 // ask the PLIC what interrupt we should serve.
