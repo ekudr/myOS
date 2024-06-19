@@ -67,6 +67,10 @@ int boot_start(void)
     tasks_init();
     printf("Done.\n");
 
+	printf("[TRAP] init interrupts ... ");
+    trap_init();
+    printf("Done.\n");
+
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
     w_sstatus(r_sstatus() | SSTATUS_SIE | (1 << 3));

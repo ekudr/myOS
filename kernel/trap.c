@@ -11,7 +11,7 @@ uint64_t ticks;
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
 
-void trapinit(void) {
+void trap_init(void) {
   initlock(&tickslock, "time");
   w_stvec((uint64)kernelvec);
 }
