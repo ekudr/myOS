@@ -74,6 +74,8 @@ int boot_start(void)
 	printf("[CONSOLE] init ... ");
 
 	printf("Done.\n");
+
+    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
 	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
