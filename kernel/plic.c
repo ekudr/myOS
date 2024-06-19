@@ -14,7 +14,7 @@ void plic_init(void) {
 
   for (id = 1; id <= 136; id++)
     {
-      putreg32(1, (uintptr_t)(JH7110_PLIC_PRIORITY + 4 * id));
+      *(uint32*)(JH7110_PLIC_PRIORITY + 4 * id) = 1;
     }
 
   int hart = cpuid();
