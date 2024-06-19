@@ -9,9 +9,13 @@
 //
 
 void plic_init(void) {
-  // set desired IRQ priorities non-zero (otherwise disabled).
-  *(uint32*)(JH7110_PLIC_BASE + UART0_IRQ*4) = 1;
-  //*(uint32*)(PLIC + VIRTIO0_IRQ*4) = 1;
+
+  int id;
+
+  for (id = 1; id <= 136; id++)
+    {
+      putreg32(1, (uintptr_t)(JH7110_PLIC_PRIORITY + 4 * id));
+    }
 
   int hart = cpuid();
 
