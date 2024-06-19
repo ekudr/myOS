@@ -38,28 +38,38 @@
 
 // qemu puts UART registers here in physical memory.
 #define UART0 0x10000000L
-#define UART0_IRQ 27        //10
+#define UART0_IRQ 32        // Global IRQ + 5
 #define UART0_REG_SHIFT 2
 
-// virtio mmio interface
-#define VIRTIO0 0x10001000
-#define VIRTIO0_IRQ 1
 
 // core local interruptor (CLINT), which contains the timer.
 #define CLINT 0x2000000L
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8) // cycles since boot.
 
-// qemu puts platform-level interrupt controller (PLIC) here.
-#define PLIC 0x0c000000L
-#define PLIC_PRIORITY (PLIC + 0x0)
-#define PLIC_PENDING (PLIC + 0x1000)
-#define PLIC_MENABLE(hart) (PLIC + 0x2000 + (hart)*0x100)
-#define PLIC_SENABLE(hart) (PLIC + 0x2080 + (hart)*0x100)
-#define PLIC_MPRIORITY(hart) (PLIC + 0x200000 + (hart)*0x2000)
-#define PLIC_SPRIORITY(hart) (PLIC + 0x201000 + (hart)*0x2000)
-#define PLIC_MCLAIM(hart) (PLIC + 0x200004 + (hart)*0x2000)
-#define PLIC_SCLAIM(hart) (PLIC + 0x201004 + (hart)*0x2000)
+/* PLIC Base address */
+#define JH7110_PLIC_BASE 0x0c000000L
+
+/* Interrupt Priority */
+#define JH7110_PLIC_PRIORITY  (JH7110_PLIC_BASE + 0x000000)
+
+/* Hart 1 S-Mode Interrupt Enable */
+#define JH7110_PLIC_ENABLE1   (JH7110_PLIC_BASE + 0x002100)
+#define JH7110_PLIC_ENABLE2   (JH7110_PLIC_BASE + 0x002104)
+
+/* Hart 1 S-Mode Priority Threshold */
+#define JH7110_PLIC_THRESHOLD (JH7110_PLIC_BASE + 0x202000)
+
+/* Hart 1 S-Mode Claim / Complete */
+#define JH7110_PLIC_CLAIM     (JH7110_PLIC_BASE + 0x202004)
+
+#define JH7110_PLIC_SENABLE(hart) (JH7110_PLIC_BASE + 0x2100 + (hart)*0x100)
+
+
+
+#define JH7110_PLIC_SPRIORITY(hart) (JH7110_PLIC_THRESHOLD + (hart)*0x2000)
+
+#define JH7110_PLIC_SCLAIM(hart) (JH7110_PLIC_CLAIM + (hart)*0x2000)
 
 
 
