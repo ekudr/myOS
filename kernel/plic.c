@@ -47,6 +47,17 @@ void plic_init(void) {
 
   printf("[PLIC] enable 1 register 0x%lX\n",getreg32((uintptr_t)(JH7110_PLIC_ENABLE1)));
   printf("[PLIC] enable 2 register 0x%lX\n",getreg32((uintptr_t)(JH7110_PLIC_ENABLE2)));
+
+
+printf("[CLINT] MSIP 0 register 0x%lX\n",getreg32((uintptr_t)(0x02000000)));
+printf("[CLINT] MSIP 1 register 0x%lX\n",getreg32((uintptr_t)(0x02000004)));
+printf("[CLINT] MSIP 2 register 0x%lX\n",getreg32((uintptr_t)(0x02000008)));
+printf("[CLINT] MSIP 3 register 0x%lX\n",getreg32((uintptr_t)(0x0200000C)));
+printf("[CLINT] MSIP 4 register 0x%lX\n",getreg32((uintptr_t)(0x02000010)));
+
+printf("[CLINT] MTIMECMP 0 HART1 register 0x%lX\n",getreg32((uintptr_t)(0x02000008)));
+printf("[CLINT] MTIMECMP 1 HART1 register 0x%lX\n",getreg32((uintptr_t)(0x0200000C)));
+
 }
 
 // ask the PLIC what interrupt we should serve.
