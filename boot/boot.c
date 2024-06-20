@@ -26,10 +26,20 @@ void memset(void *b, int c, int len)
             *s++ = c;
     }
 
-static inline void sbi_ecall_console_puts(const char *str) {
-	sbi_ecall(SBI_EXT_DBCN, SBI_EXT_DBCN_CONSOLE_WRITE,
-		  sbi_strlen(str), (unsigned long)str, 0, 0, 0, 0);
+void boot_init_hart(){
+
+    __sync_synchronize();
+    printf("hart %d starting\n", cpuid());
+
+    mmu_enable(g_kernel_pgt_base, 0);    // turn on paging
+    w_stvec((uint64)kernelvec);   // install kernel trap vector
+//    plicinithart();   // ask PLIC for device interrupts
+
+  scheduler();   
 }
+     
+
+
 
 int boot_start(void)
 {

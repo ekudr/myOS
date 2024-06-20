@@ -45,8 +45,26 @@ static inline long sbi_get_version(void) {
 	if (!ret.error)
 		return ret.value;
 	else
-		return -1;
+		return ret.error;
     
+}
+
+/**
+ * sbi_probe_extension() - Check if an SBI extension ID is supported or not.
+ * @extid: The extension ID to be probed.
+ *
+ * Return: 1 or an extension specific nonzero value if yes, 0 otherwise.
+ */
+long sbi_probe_extension(int extid)
+{
+	struct sbiret ret;
+
+	ret = sbi_ecall(SBI_EXT_BASE, SBI_EXT_BASE_PROBE_EXT, extid,
+			0, 0, 0, 0, 0);
+	if (!ret.error)
+		return ret.value;
+
+	return 0;
 }
 
 static void sbi_set_timer(uint64_t stime_value) {
@@ -69,6 +87,10 @@ void sbi_init (void) {
 
     printf("SBI detected version %d.%d\n", (sbi_version >> 24) & 0x7f, sbi_version & 0x7f);
 
+if (sbi_probe_extension(SBI_EXT_HSM)) {
+			
+	printf("SBI HSM extension detected\n");
+}
     
 }
 
