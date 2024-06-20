@@ -33,12 +33,12 @@ void plic_init(void) {
 
   int hart = cpuid();
 
-//  printf("[PLIC] enable interrapts for HART 0x%X\n", hart);
+  printf("[PLIC] enable interrapts for HART 0x%X\n", hart);
   
   /*set enable bits for this hart's S-mode for the uart   */ 
-  putreg32((1 << (UART0_IRQ % 32)), (uintptr_t)(JH7110_PLIC_SENABLE(hart) + (4 * (UART0_IRQ / 32))));
+//  putreg32((1 << (UART0_IRQ % 32)), (uintptr_t)(JH7110_PLIC_SENABLE(hart) + (4 * (UART0_IRQ / 32))));
   
-//  putreg32(1, (uintptr_t)(JH7110_PLIC_ENABLE2));
+  putreg32(1, (uintptr_t)(JH7110_PLIC_ENABLE2));
 
 
 

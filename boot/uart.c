@@ -75,6 +75,7 @@ void uart_init(void) {
 
   initlock(&uart_tx_lock, "uart");
 
+// printf("[UART] irq reg 0x%X", REGB(UART0, UART_IER) );
   uart_inited = 0x55555555;
 }
 

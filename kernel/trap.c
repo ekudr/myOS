@@ -38,7 +38,7 @@ void kerneltrap() {
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && mytask() != 0 && mytask()->state == RUNNING)
     yield();
-
+  panic("[TRAP] chatched");
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.
   w_sepc(sepc);
