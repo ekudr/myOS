@@ -25,7 +25,7 @@ void memset(void *b, int c, int len)
         while(len--)
             *s++ = c;
     }
-
+/*
 void boot_init_hart(){
 
     __sync_synchronize();
@@ -38,7 +38,7 @@ void boot_init_hart(){
   scheduler();   
 }
      
-
+*/
 
 
 int boot_start(void)
@@ -61,11 +61,11 @@ int boot_start(void)
 //	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, 100000, 0, 0, 0, 0, 0);
 //	w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
-    sbi_ecall_console_puts("\nTest SBI console output\n");
+//    sbi_ecall_console_puts("\nTest SBI console output\n");
 
 	uart_init();
 
-    lib_puts("myOS version ");
+    lib_puts("\nmyOS version ");
     lib_puts( version);
     lib_putc('\n');
 
