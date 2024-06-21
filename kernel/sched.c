@@ -94,7 +94,7 @@ void scheduler(void) {
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-    printf("%d",cpuid());
+    
     for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
       acquire(&t->lock);
       if(t->state == RUNNABLE) {

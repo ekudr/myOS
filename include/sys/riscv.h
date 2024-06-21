@@ -104,6 +104,12 @@ static inline void w_tp(uint64 x) {
   asm volatile("mv tp, %0" : : "r" (x));
 }
 
+static inline uint64 r_sp() {
+  uint64 x;
+  asm volatile("mv %0, sp" : "=r" (x) );
+  return x;
+}
+
 // enable device interrupts
 static inline void intr_on() {
   w_sstatus(r_sstatus() | SSTATUS_SIE);

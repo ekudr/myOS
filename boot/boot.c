@@ -33,7 +33,9 @@ void memset(void *b, int c, int len)
 void boot_init_hart(){
 
     __sync_synchronize();
+
     printf("hart %d starting\n", cpuid());
+    printf("stack pointer: 0x%lX\n", r_sp());
 
     mmu_enable(g_kernel_pgt_base, 0);    // turn on paging
     w_stvec((uint64)kernelvec);   // install kernel trap vector
@@ -101,7 +103,8 @@ int boot_start(void)
 	__sync_synchronize();
 
     sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
-//	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
-//	scheduler();
+	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
+    printf("stack pointer: 0x%lX\n", r_sp());
+	scheduler();
     while(1){}
 }
