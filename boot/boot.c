@@ -19,6 +19,7 @@ void plic_init(void);
 void tasks_init(void);
 void mm_init(void);
 void kernelvec();
+void _hart_start();
 
 
 void memset(void *b, int c, int len)
@@ -99,7 +100,7 @@ int boot_start(void)
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
 
-    sbi_hsm_hart_start(3, _hart_start, 2);
+    sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
 //	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
 //	scheduler();
     while(1){}
