@@ -13,7 +13,7 @@ u64 boot_cpu_hartid;
 static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
-#define FB_LEN	1920*1080
+#define FB_LEN	1920*1080*4
 
 void plic_init(void); 
 void tasks_init(void);
@@ -55,12 +55,18 @@ int boot_start(void)
 
 
     /* Crashing the screen image. test :) */
-    int x = 0;
+    /*
+        int x = 0;
     for(int i = 0; i < FB_LEN; i++) {
 	*(FB+(i*4)) = x++;
 	*(FB+(i*4)+1) = x++;
 	*(FB+(i*4)+2) = x++;
 	*(FB+(i*4)+3) = 0x00;
+    }
+    */
+       
+    for(int i = 0; i < FB_LEN; i++) {
+	*(u8*)(FB+i) = 0x00;
     }
 
 	sbi_init();
