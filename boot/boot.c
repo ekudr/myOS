@@ -102,7 +102,10 @@ int boot_start(void)
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
 
+    sbi_hsm_hart_start(2, (uint64)_hart_start, 2);
     sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
+    sbi_hsm_hart_start(4, (uint64)_hart_start, 2);
+
 	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
     printf("stack pointer: 0x%lX\n", r_sp());
 	scheduler();

@@ -25,8 +25,8 @@ start_entry:
 //    load_global_pointer
 
     /* Disable FPU & VECTOR */
-    li t0, (0x6000 | 0x600)
-    csrc sstatus, t0
+//    li t0, (0x6000 | 0x600)
+//    csrc sstatus, t0
 
 	la a2, boot_cpu_hartid
 	sd a0, (a2)
@@ -51,6 +51,8 @@ _hart_start:
     /* Disable interrapts */
     csrw sie, zero
     csrw sip, zero
+
+    mv tp,a0
 
         /*  Set stack */
     la t0, _stack_top   /* Stack base */
