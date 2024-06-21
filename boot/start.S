@@ -9,7 +9,7 @@
 #include <asm/asm.h>
 
     .section .text.enter , "ax"
-    .global _start, start_entry
+    .global _start, start_entry, _hart_start
 
 _start:
 

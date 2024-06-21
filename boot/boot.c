@@ -3,6 +3,7 @@
 #include <sbi_ecall_interface.h>
 #include <sys/riscv.h>
 #include <mmu.h> 
+#include <rv_mmu.h>
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -97,6 +98,9 @@ int boot_start(void)
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
-	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
-	scheduler(); 
+
+    sbi_hsm_hart_start(3, _hart_start, 2);
+//	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
+//	scheduler();
+    while(1){}
 }

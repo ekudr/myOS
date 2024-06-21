@@ -79,12 +79,23 @@ void sbi_set_timer(uint64_t stime_value) {
 
 int sbi_hsm_hart_get_status(unsigned long hartid) {
     struct sbiret ret;
-    ret = sbi_ecall(SBI_EXT_HSM, SBI_EXT_HSM_HART_STATUS,
+    ret = sbi_ecall(SBI_EXT_HSM, SBI_EXT_HSM_HART_GET_STATUS,
         hartid, 0, 0, 0, 0, 0);
     if (!ret.error)
         return ret.value;
     else
-        return sbi_err_map_linux_errno(ret.error);
+        return ret.error;
+}
+
+int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv) {
+    struct sbiret ret;
+
+    ret = sbi_ecall(SBI_EXT_HSM, SBI_EXT_HSM_HART_START, hartid, saddr, priv, 0, 0, 0);
+
+    if (!ret.error)
+        return ret.value;
+    else
+        return ret.error;
 }
 
 void sbi_init (void) {
