@@ -46,3 +46,20 @@ start_entry:
     call boot_start
     tail boot_start
 
+_hart_start:
+
+    /* Disable interrapts */
+    csrw sie, zero
+    csrw sip, zero
+
+        /*  Set stack */
+    la t0, _stack_top   /* Stack base */
+    li t1, 4096     /* Stack size */
+    mul t1, a0, t1  /* a0 is number oh HART */
+    add t0, t0, t1  
+    li t1, 4096     /* reserved stack */
+    add t0, t0, t1
+    mv sp, t0
+
+    call boot_init_hart
+    tail boot_init_hart

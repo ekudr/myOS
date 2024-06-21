@@ -1,7 +1,8 @@
 #include <common.h>
 #include <string.h>
 #include <sbi_ecall_interface.h>
-#include <sys/riscv.h> 
+#include <sys/riscv.h>
+#include <mmu.h> 
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -16,6 +17,7 @@ static char* version = VERSION_STR;
 void plic_init(void); 
 void tasks_init(void);
 void mm_init(void);
+void kernelvec();
 
 
 void memset(void *b, int c, int len)
@@ -25,7 +27,7 @@ void memset(void *b, int c, int len)
         while(len--)
             *s++ = c;
     }
-/*
+
 void boot_init_hart(){
 
     __sync_synchronize();
@@ -38,7 +40,7 @@ void boot_init_hart(){
   scheduler();   
 }
      
-*/
+
 
 
 int boot_start(void)

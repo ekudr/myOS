@@ -67,7 +67,7 @@ long sbi_probe_extension(int extid)
 	return 0;
 }
 
-static void sbi_set_timer(uint64_t stime_value) {
+void sbi_set_timer(uint64_t stime_value) {
 #if __riscv_xlen == 32
 	sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, stime_value,
 		  stime_value >> 32, 0, 0, 0, 0);
@@ -77,6 +77,15 @@ static void sbi_set_timer(uint64_t stime_value) {
 #endif
 }
 
+int sbi_hsm_hart_get_status(unsigned long hartid) {
+    struct sbiret ret;
+    ret = sbi_ecall(SBI_EXT_HSM, SBI_EXT_HSM_HART_STATUS,
+        hartid, 0, 0, 0, 0, 0);
+    if (!ret.error)
+        return ret.value;
+    else
+        return sbi_err_map_linux_errno(ret.error);
+}
 
 void sbi_init (void) {
     int ret;
@@ -90,6 +99,12 @@ void sbi_init (void) {
 if (sbi_probe_extension(SBI_EXT_HSM)) {
 			
 	printf("SBI HSM extension detected\n");
+	printf("SBI HSM hart 0 status %d\n", sbi_hsm_hart_get_status(0));
+	printf("SBI HSM hart 1 status %d\n", sbi_hsm_hart_get_status(1));
+	printf("SBI HSM hart 2 status %d\n", sbi_hsm_hart_get_status(2));
+	printf("SBI HSM hart 3 status %d\n", sbi_hsm_hart_get_status(3));
+	printf("SBI HSM hart 4 status %d\n", sbi_hsm_hart_get_status(4));
+
 }
     
 }
