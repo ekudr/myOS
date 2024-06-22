@@ -84,10 +84,11 @@ void uart_putc(char ch) {
 
     
   acquire(&uart_tx_lock);
-      while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
-    REGB(UART0, UART_THR) = ch;
 
-/*
+//      while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
+//    REGB(UART0, UART_THR) = ch;
+
+
   while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){
     // buffer is full.
     // wait for uartstart() to open up space in the buffer.
@@ -97,7 +98,7 @@ void uart_putc(char ch) {
   uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = ch;
   uart_tx_w += 1;
   uart_start();
-  */ 
+ 
   release(&uart_tx_lock);
  
 
