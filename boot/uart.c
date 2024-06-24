@@ -24,7 +24,7 @@
 #define UART_LSR_TX_IDLE (1<<5)    // THR can accept another character to send
 
 
-
+#define UART_LSR_BUF_EMPTY_MASK 0x20  // LSR bit 5 - Transmit Buffer Empty; the UART sent data from the THR to the OSR
 #define UART_LSR_EMPTY_MASK 0x40 // LSR bit 6 - Transmitter empty; both the THR and LSR are empty
 
 
@@ -85,9 +85,9 @@ void uart_putc(char ch) {
     
   acquire(&uart_tx_lock);
 
-//      while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
-//    REGB(UART0, UART_THR) = ch;
-
+  while ((REGW(UART0, UART_LSR) & UART_LSR_BUF_EMPTY_MASK) == 0);
+  REGB(UART0, UART_THR) = ch;
+/*
 
   while(uart_tx_w == uart_tx_r + UART_TX_BUF_SIZE){
     // buffer is full.
@@ -98,7 +98,8 @@ void uart_putc(char ch) {
   uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE] = ch;
   uart_tx_w += 1;
   uart_start();
- 
+ */
+
   release(&uart_tx_lock);
  
 
@@ -175,6 +176,8 @@ void lib_puts(char *s) {
 // arrived, or the uart is ready for more output, or
 // both. called from devintr().
 void uart_intr(void) {
+
+  panic("[UART] irq");
   // read and process incoming characters.
   while(1){
     int c = uart_getc();

@@ -13,7 +13,7 @@ u64 boot_cpu_hartid;
 static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
-#define FB_LEN	1920*1080*16
+#define FB_LEN	3840*2160*3
 
 void plic_init(void); 
 void tasks_init(void);
