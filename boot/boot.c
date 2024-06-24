@@ -3,7 +3,6 @@
 #include <sbi_ecall_interface.h>
 #include <sys/riscv.h>
 #include <mmu.h> 
-#include <rv_mmu.h>
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -82,6 +81,7 @@ int boot_start(void)
     lib_putc('\n');
 
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
+    printf("TP is 0x%lX\n", r_tp());
 
     mm_init();
 

@@ -1,6 +1,11 @@
 #ifndef _MMU_H
 #define _MMU_H
 
+#include <rv_mmu.h>
+
+#define PAGESIZE    RV_MMU_PAGE_SIZE
+
+
 extern uintptr_t   g_kernel_pgt_base;
 
 void * pg_alloc(void);

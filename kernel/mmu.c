@@ -19,7 +19,6 @@
  ****************************************************************************/
 
 #include <common.h>
-#include <rv_mmu.h>
 #include <printf.h>
 #include <sys/riscv.h>
 #include <mmu.h>

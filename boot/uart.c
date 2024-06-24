@@ -79,6 +79,25 @@ void uart_init(void) {
   uart_inited = 0x55555555;
 }
 
+// alternate version of uartputc() that doesn't 
+// use interrupts, for use by kernel printf() and
+// to echo characters. it spins waiting for the uart's
+// output register to be empty.
+void uart_putc_sync(int c) {
+
+  push_off();
+
+//  if(panicked){
+//    for(;;)
+//      ;
+//  }
+
+  // wait for Transmit Holding Empty to be set in LSR.
+  while ((REGW(UART0, UART_LSR) & UART_LSR_BUF_EMPTY_MASK) == 0);
+  REGB(UART0, UART_THR) = ch;
+
+  pop_off();
+}
 
 void uart_putc(char ch) {
 
@@ -183,7 +202,7 @@ void uart_intr(void) {
     int c = uart_getc();
     if(c == -1)
       break;
-//    console_intr(c);
+    console_intr(c);
   }
 
   // send buffered characters.

@@ -89,6 +89,7 @@ struct trapframe {
 
 // Per-CPU state.
 struct cpu {
+  int hartid;
   struct task *task;          // The process running on this cpu, or null.
   struct context context;     // swtch() here to enter scheduler().
   int noff;                   // Depth of push_off() nesting.
