@@ -38,7 +38,7 @@ start_entry:
     add t0, t0, t1  
     li t1, 4096     /* reserved stack */
     add t0, t0, t1
-    mv sp, t0
+    move sp, t0
 
 
 //    li sp, 0x40210000
@@ -52,7 +52,7 @@ _hart_start:
     csrw sie, zero
     csrw sip, zero
 
-    mv tp,a0
+    move tp,a0
 
         /*  Set stack */
     la t0, _stack_top   /* Stack base */
@@ -61,7 +61,7 @@ _hart_start:
     add t0, t0, t1  
     li t1, 4096     /* reserved stack */
     add t0, t0, t1
-    mv sp, t0
+    move sp, t0
 
     call boot_init_hart
     tail boot_init_hart

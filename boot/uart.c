@@ -94,7 +94,7 @@ void uart_putc_sync(int c) {
 
   // wait for Transmit Holding Empty to be set in LSR.
   while ((REGW(UART0, UART_LSR) & UART_LSR_BUF_EMPTY_MASK) == 0);
-  REGB(UART0, UART_THR) = ch;
+  REGB(UART0, UART_THR) = c;
 
   pop_off();
 }
@@ -202,7 +202,7 @@ void uart_intr(void) {
     int c = uart_getc();
     if(c == -1)
       break;
-    console_intr(c);
+//    console_intr(c);
   }
 
   // send buffered characters.

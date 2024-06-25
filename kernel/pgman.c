@@ -39,7 +39,7 @@ void pg_free(void *pa)
   struct sq_entry_s *r;
 
   if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
-
+    panic("pg_free");
   // Fill with junk to catch dangling refs.
  // memset(pa, 1, RV_MMU_PAGE_SIZE);
 

@@ -149,6 +149,26 @@ void yield(void) {
   release(&t->lock);
 }
 
+// A fork child's very first scheduling by scheduler()
+// will swtch to forkret.
+void forkret(void) {
+
+  static int first = 1;
+
+  // Still holding t->lock from scheduler.
+  release(&mytask()->lock);
+
+  if (first) {
+    // File system initialization must be run in the context of a
+    // regular process (e.g., because it calls sleep), and thus cannot
+    // be run from main().
+    first = 0;
+    fsinit(ROOTDEV);
+  }
+
+  usertrapret();
+}
+
 // Atomically release lock and sleep on chan.
 // Reacquires lock when awakened.
 void sleep(void *chan, struct spinlock *lk)
@@ -195,4 +215,132 @@ wakeup(void *chan)
       release(&t->lock);
     }
   }
+}
+
+
+int alloc_pid() {
+
+  int pid;
+  
+  acquire(&pid_lock);
+  pid = nextpid;
+  nextpid = nextpid + 1;
+  release(&pid_lock);
+
+  return pid;
+}
+
+/* Look in the process table for an UNUSED proc.
+* If found, initialize state required to run in the kernel,
+* and return with t->lock held.
+* If there are no free procs, or a memory allocation fails, return 0.
+*/ 
+static struct task* alloc_task(void) {
+
+  struct task *t;
+
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
+    acquire(&t->lock);
+    if(t->state == UNUSED) {
+      goto found;
+    } else {
+      release(&t->lock);
+    }
+  }
+  return 0;
+
+found:
+  t->pid = alloc_pid();
+  t->state = USED;
+
+  // Allocate a trapframe page.
+  if((t->trapframe = (struct trapframe *)pg_alloc()) == 0){
+    free_task(t);
+    release(&t->lock);
+    return 0;
+  }
+
+  // An empty user page table.
+  t->pagetable = proc_pagetable(t);
+  if(t->pagetable == 0){
+    free_task(t);
+    release(&t->lock);
+    return 0;
+  }
+
+  // Set up new context to start executing at forkret,
+  // which returns to user space.
+  memset(&t->context, 0, sizeof(t->context));
+  t->context.ra = (uint64)forkret;
+  t->context.sp = t->kstack + PAGESIZE;
+
+  return t;
+}
+
+/*
+*   free a task structure and the data hanging from it,
+*   including user pages.
+*   p->lock must be held.
+*/ 
+
+static void free_task(struct task *t)
+{
+  if(t->trapframe)
+    pg_free((void*)t->trapframe);
+  t->trapframe = 0;
+  if(t->pagetable)
+    proc_freepagetable(t->pagetable, t->sz);
+  t->pagetable = 0;
+  t->sz = 0;
+  t->pid = 0;
+  t->parent = 0;
+  t->name[0] = 0;
+  t->chan = 0;
+  t->killed = 0;
+  t->xstate = 0;
+  t->state = UNUSED;
+}
+
+
+
+
+
+
+
+// a user program that calls exec("/init")
+// assembled from ../user/initcode.S
+// od -t xC ../user/initcode
+u8 initcode[] = {
+  0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02,
+  0x97, 0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02,
+  0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
+  0x93, 0x08, 0x20, 0x00, 0x73, 0x00, 0x00, 0x00,
+  0xef, 0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69,
+  0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00
+};
+
+// Set up first user process.
+void shed_user_init(void) {
+
+  struct task *t;
+
+  t = alloc_task();
+  initproc = t;
+  
+  // allocate one user page and copy initcode's instructions
+  // and data into it.
+  uvmfirst(t->pagetable, initcode, sizeof(initcode));
+  t->sz = PAGESIZE;
+
+  // prepare for the very first "return" from kernel to user.
+  t->trapframe->epc = 0;      // user program counter
+  t->trapframe->sp = PAGESIZE;  // user stack pointer
+
+  safestrcpy(t->name, "initcode", sizeof(t->name));
+  t->cwd = namei("/");
+
+  t->state = RUNNABLE;
+
+  release(&t->lock);
 }

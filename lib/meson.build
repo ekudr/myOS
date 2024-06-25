@@ -3,6 +3,7 @@ lib_sources = [
     'string.c',
     'printf.c',
     'sq_remfirst.c',
+    'memset.S',
 ]
 
 libc_a = static_library(

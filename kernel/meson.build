@@ -8,7 +8,7 @@ kernel_sources = [
     'trap.c',
     'kernelvec.S',
     'plic.c',
-//    'console.c',
+#    'console.c',
 ]
 
 kernel_a = static_library(

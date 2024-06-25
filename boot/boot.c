@@ -20,7 +20,7 @@ void mm_init(void);
 void kernelvec();
 void _hart_start();
 
-
+/*
 void memset(void *b, int c, int len)
     {
        char *s = b;
@@ -28,6 +28,7 @@ void memset(void *b, int c, int len)
         while(len--)
             *s++ = c;
     }
+*/
 
 void boot_init_hart(){
 
