@@ -42,6 +42,7 @@ boot_elf = executable(
     ],
     link_depends: [
         linker_script_deps,
-        libc_a
+        libc_a,
+        kernel_a,
     ],
 )

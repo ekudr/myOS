@@ -6,6 +6,7 @@
 typedef uint64 pte_t;
 typedef uint64 *pagetable_t; // 512 PTEs
 
+
 // Supervisor Status Register, sstatus
 
 #define SSTATUS_SPP (1L << 8)  // Previous mode, 1=Supervisor, 0=User
@@ -107,6 +108,27 @@ static inline void w_tp(uint64 x) {
 static inline uint64 r_sp() {
   uint64 x;
   asm volatile("mv %0, sp" : "=r" (x) );
+  return x;
+}
+
+// use riscv's sv39 page table scheme.
+#define SATP_SV39 (8L << 60)
+
+#define MAKE_SATP(pagetable) (SATP_SV39 | (((uint64)pagetable) >> 12))
+
+// supervisor address translation and protection;
+// holds the address of the page table.
+static inline void 
+w_satp(uint64 x)
+{
+  asm volatile("csrw satp, %0" : : "r" (x));
+}
+
+static inline uint64
+r_satp()
+{
+  uint64 x;
+  asm volatile("csrr %0, satp" : "=r" (x) );
   return x;
 }
 

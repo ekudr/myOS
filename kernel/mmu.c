@@ -44,6 +44,27 @@ static const size_t g_pgt_sizes[] =
 *     12..20 -- 9 bits of level-0 index.
 *      0..11 -- 12 bits of byte offset within the page.
 */ 
+pte_t *
+mmu_walk(pagetable_t pagetable, uint64 va, int alloc) {
+  if(va >= MAXVA)
+    panic("walk");
+
+  for(int level = 2; level > 0; level--) {
+    pte_t *pte = &pagetable[PX(level, va)];
+    if(*pte & PTE_VALID) {
+      pagetable = (pagetable_t)PTE2PA(*pte);
+    } else {
+      if(!alloc || (pagetable = (pte_t*)pg_alloc()) == 0)
+        return 0;
+      memset((void *)pagetable, 0, PAGESIZE);
+      *pte = PA2PTE(pagetable) | PTE_VALID;
+    }
+  }
+  return &pagetable[PX(0, va)];
+}
+
+
+
 
 uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
@@ -221,6 +242,25 @@ size_t mmu_get_region_size(uint32_t ptlevel)
   return g_pgt_sizes[ptlevel - 1];
 }
 
+// Recursively free page-table pages.
+// All leaf mappings must already have been removed.
+void mmu_free_walk(pagetable_t pagetable)
+{
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if((pte & PTE_VALID) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      mmu_free_walk((pagetable_t)child);
+      pagetable[i] = 0;
+    } else if(pte & PTE_VALID){
+      panic("freewalk: leaf");
+    }
+  }
+  pg_free((void*)pagetable);
+}
+
 // Load the user initcode into address 0 of pagetable,
 // for the very first process.
 // sz must be less than a page.
@@ -235,3 +275,56 @@ void mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz)
   mmu_map_pages((uintptr_t)pagetable, 0, PAGESIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
   memmove(mem, src, sz);
 }
+
+// Free user memory pages,
+// then free page-table pages.
+void
+mmu_user_pg_free(pagetable_t pagetable, uint64 sz)
+{
+  if(sz > 0)
+    mmu_user_unmap(pagetable, 0, PGROUNDUP(sz)/PAGESIZE, 1);
+  mmu_free_walk(pagetable);
+}
+
+// Remove npages of mappings starting from va. va must be
+// page-aligned. The mappings must exist.
+// Optionally free the physical memory.
+void
+mmu_user_unmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
+{
+  uint64 a;
+  pte_t *pte;
+
+  if((va % PAGESIZE) != 0)
+    panic("uvmunmap: not aligned");
+
+  for(a = va; a < va + npages*PAGESIZE; a += PAGESIZE) {
+
+    if((pte = mmu_walk(pagetable, a, 0)) == 0)
+      panic("uvmunmap: walk");
+    if((*pte & PTE_VALID) == 0)
+      panic("uvmunmap: not mapped");
+    if(PTE_FLAGS(*pte) == PTE_VALID)
+      panic("uvmunmap: not a leaf");
+    if(do_free){
+      uint64 pa = PTE2PA(*pte);
+      pg_free((void*)pa);
+    }
+    *pte = 0;
+  }
+}
+
+/*
+*   create an empty user page table.
+*   returns 0 if out of memory.
+*/ 
+pagetable_t mmu_user_pt_create() {
+
+  pagetable_t pagetable;
+  pagetable = (pagetable_t) pg_alloc();
+  if(pagetable == 0)
+    return 0;
+  memset(pagetable, 0, PAGESIZE);
+  return pagetable;
+}
+

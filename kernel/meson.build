@@ -7,6 +7,7 @@ kernel_sources = [
     'mmu.c',
     'trap.c',
     'kernelvec.S',
+    'trampoline.S',
     'plic.c',
 #    'console.c',
 ]

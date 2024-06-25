@@ -3,6 +3,7 @@
 #include <spinlock.h>
 #include <rv_mmu.h>
 #include <mmu.h>
+#include <string.h>
 
 
 struct cpu cpus[CONFIG_MP_NUM_CPUS];
@@ -13,6 +14,8 @@ struct task *inittask;
 
 int nextpid = 1;
 struct spinlock pid_lock;
+
+extern char trampoline[]; // trampoline.S
 
 static void free_task(struct task *t);
 
@@ -219,6 +222,39 @@ wakeup(void *chan)
   }
 }
 
+// Create a user page table for a given process, with no user memory,
+// but with trampoline and trapframe pages.
+pagetable_t task_pagetable(struct task *t) {
+
+  pagetable_t pagetable;
+
+  // An empty page table.
+  pagetable = mmu_user_pt_create();
+  if(pagetable == 0)
+    return 0;
+
+  // map the trampoline code (for system call return)
+  // at the highest user virtual address.
+  // only the supervisor uses it, on the way
+  // to/from user space, so not PTE_U.
+  if(mmu_map_pages(pagetable, TRAMPOLINE, PAGESIZE,
+              (uint64)trampoline, PTE_R | PTE_X) < 0){
+    mmu_user_pg_free(pagetable, 0);
+    return 0;
+  }
+
+  // map the trapframe page just below the trampoline page, for
+  // trampoline.S.
+  if(mmu_map_pages(pagetable, TRAPFRAME, PAGESIZE,
+              (uint64)(t->trapframe), PTE_R | PTE_W) < 0){
+    mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
+    mmu_user_pg_free(pagetable, 0);
+    return 0;
+  }
+
+  return pagetable;
+}
+
 
 int alloc_pid() {
 
@@ -263,7 +299,7 @@ found:
   }
 
   // An empty user page table.
-  t->pagetable = proc_pagetable(t);
+  t->pagetable = task_pagetable(t);
   if(t->pagetable == 0){
     free_task(t);
     release(&t->lock);
@@ -291,7 +327,7 @@ static void free_task(struct task *t)
     pg_free((void*)t->trapframe);
   t->trapframe = 0;
   if(t->pagetable)
-    proc_freepagetable(t->pagetable, t->sz);
+    task_freepagetable(t->pagetable, t->sz);
   t->pagetable = 0;
   t->sz = 0;
   t->pid = 0;
@@ -305,8 +341,15 @@ static void free_task(struct task *t)
 
 
 
-
-
+// Free a process's page table, and free the
+// physical memory it refers to.
+void
+task_freepagetable(pagetable_t pagetable, uint64 sz)
+{
+  mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
+  mmu_user_unmap(pagetable, TRAPFRAME, 1, 0);
+  mmu_user_pg_free(pagetable, sz);
+}
 
 
 // a user program that calls exec("/init")
@@ -332,7 +375,7 @@ void shed_user_init(void) {
   
   // allocate one user page and copy initcode's instructions
   // and data into it.
-  uvmfirst(t->pagetable, initcode, sizeof(initcode));
+  mmu_user_vmfirst(t->pagetable, initcode, sizeof(initcode));
   t->sz = PAGESIZE;
 
   // prepare for the very first "return" from kernel to user.
@@ -340,9 +383,49 @@ void shed_user_init(void) {
   t->trapframe->sp = PAGESIZE;  // user stack pointer
 
   safestrcpy(t->name, "initcode", sizeof(t->name));
-  t->cwd = namei("/");
+//  t->cwd = namei("/");
 
   t->state = RUNNABLE;
 
   release(&t->lock);
+}
+
+// Kill the process with the given pid.
+// The victim won't exit until it tries to return
+// to user space (see usertrap() in trap.c).
+int kill(int pid)
+{
+  struct task *t;
+
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++){
+    acquire(&t->lock);
+    if(t->pid == pid){
+      t->killed = 1;
+      if(t->state == SLEEPING){
+        // Wake process from sleep().
+        t->state = RUNNABLE;
+      }
+      release(&t->lock);
+      return 0;
+    }
+    release(&t->lock);
+  }
+  return -1;
+}
+
+void setkilled(struct task *t)
+{
+  acquire(&t->lock);
+  t->killed = 1;
+  release(&t->lock);
+}
+
+int killed(struct task *t)
+{
+  int k;
+  
+  acquire(&t->lock);
+  k = t->killed;
+  release(&t->lock);
+  return k;
 }

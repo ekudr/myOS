@@ -10,6 +10,8 @@
 /* void *memset(void *, int, size_t) */
 
     .global memset
+	.balign 4
+	
 memset:
 	move t0, a0  /* Preserve return value */
 

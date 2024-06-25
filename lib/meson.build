@@ -4,6 +4,7 @@ lib_sources = [
     'printf.c',
     'sq_remfirst.c',
     'memset.S',
+    'memmove.S',
 ]
 
 libc_a = static_library(

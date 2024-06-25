@@ -13,8 +13,11 @@
 #include <stdint.h>
 
 
-void *memset(void *, int, size_t);
+//void *memset(void *, int, size_t);
+extern void *memset(void *, int, size_t);
+extern void *memmove(void *, const void *, size_t);
 
+char*           safestrcpy(char*, const char*, int);
 /*
   Provides sbi_strcmp for the completeness of supporting string functions.
   it is not recommended to use sbi_strcmp() but use sbi_strncmp instead.
