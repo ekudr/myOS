@@ -23,7 +23,7 @@ void pg_pool_init(void *start, void *end) {
 }
 
 void pg_free_range(void *pa_start, void *pa_end) {
-  
+
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + RV_MMU_PAGE_SIZE <= (char*)pa_end; p += RV_MMU_PAGE_SIZE)
@@ -38,7 +38,7 @@ void pg_free(void *pa) {
 
   struct sq_entry_s *r;
 
-  if(((uint64)pa % RV_MMU_PAGE_SIZE) != 0 || (char*)pa < mem_end || (uint64)pa >= mem_end)
+  if(((uint64)pa % PAGESIZE) != 0 || (char*)pa < mem_start || (uint64)pa >= mem_end)
     panic("pg_free");
   // Fill with junk to catch dangling refs.
  // memset(pa, 1, RV_MMU_PAGE_SIZE);
