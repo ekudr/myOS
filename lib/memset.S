@@ -3,6 +3,7 @@
  * Copyright (C) 2013 Regents of the University of California
  */
 
+#define __ASSEMBLY__
 
 #include <asm/asm.h>
 

@@ -224,7 +224,7 @@ size_t mmu_get_region_size(uint32_t ptlevel)
 // Load the user initcode into address 0 of pagetable,
 // for the very first process.
 // sz must be less than a page.
-void mmu_user_vmfirst(pagetable_t pagetable, uchar *src, uint sz)
+void mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz)
 {
   char *mem;
 
@@ -232,6 +232,6 @@ void mmu_user_vmfirst(pagetable_t pagetable, uchar *src, uint sz)
     panic("[MMU] mmu_user_uvmfirst: more than a page");
   mem = pg_alloc();
   memset(mem, 0, PAGESIZE);
-  mmu_map_pages((uintptr_t)pagetable, 0, PAGESIZE, (uint64)mem, PTE_W|PTE_R|PTE_X|PTE_U);
+  mmu_map_pages((uintptr_t)pagetable, 0, PAGESIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
   memmove(mem, src, sz);
 }

@@ -14,6 +14,8 @@ struct task *inittask;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+static void free_task(struct task *t);
+
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -163,7 +165,7 @@ void forkret(void) {
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     first = 0;
-    fsinit(ROOTDEV);
+//    fsinit(ROOTDEV);
   }
 
   usertrapret();
@@ -326,7 +328,7 @@ void shed_user_init(void) {
   struct task *t;
 
   t = alloc_task();
-  initproc = t;
+  inittask = t;
   
   // allocate one user page and copy initcode's instructions
   // and data into it.

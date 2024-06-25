@@ -68,7 +68,7 @@
 #endif
 
 #ifdef __ASSEMBLY__
-#include <asm/asm-offsets.h>
+//#include <asm/asm-offsets.h>
 
 /* Common assembly source macros */
 
