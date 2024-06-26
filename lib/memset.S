@@ -4,13 +4,14 @@
  */
 
 #define __ASSEMBLY__
+#define CONFIG_64BIT
 
 #include <asm/asm.h>
 
 /* void *memset(void *, int, size_t) */
 
     .global memset
-	.balign 4
+	.align 4
 	
 memset:
 	move t0, a0  /* Preserve return value */

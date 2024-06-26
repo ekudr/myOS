@@ -48,7 +48,7 @@ pte_t *
 mmu_walk(pagetable_t pagetable, uint64 va, int alloc) {
   if(va >= MAXVA)
     panic("walk");
-
+//printf("[MMU] mmu_walk Resolving PgTable: 0x%lX vAddr: 0x%lX\n", pagetable, va);
   for(int level = 2; level > 0; level--) {
     pte_t *pte = &pagetable[PX(level, va)];
     if(*pte & PTE_VALID) {
@@ -63,9 +63,29 @@ mmu_walk(pagetable_t pagetable, uint64 va, int alloc) {
   return &pagetable[PX(0, va)];
 }
 
+// Look up a virtual address, return the physical address,
+// or 0 if not mapped.
+// Can only be used to look up user pages.
+uint64
+mmu_walk_addr(pagetable_t pagetable, uint64 va) {
+  pte_t *pte;
+  uint64 pa;
 
+  if(va >= MAXVA)
+    return 0;
 
+  pte = mmu_walk(pagetable, va, 0);
+  if(pte == 0)
+    return 0;
+  if((*pte & PTE_VALID) == 0)
+    return 0;
+  if((*pte & PTE_U) == 0)
+    return 0;
+  pa = PTE2PA(*pte);
+  return pa;
+}
 
+/*
 uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
   uintptr_t lntable = pagetable;
@@ -98,13 +118,42 @@ uintptr_t mmu_walk_tbls(uintptr_t pagetable, uintptr_t vaddr, int alloc) {
 
   return lntable;
 }
+*/
+// Create PTEs for virtual addresses starting at va that refer to
+// physical addresses starting at pa. va and size might not
+// be page-aligned. Returns 0 on success, -1 if walk() couldn't
+// allocate a needed page-table page.
+int
+mmu_map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm) {
+  uint64 a, last;
+  pte_t *pte;
 
+  if(size == 0)
+    panic("mappages: size");
+  
+  a = PGROUNDDOWN(va);
+  last = PGROUNDDOWN(va + size - 1);
+  for(;;){
+    if((pte = mmu_walk(pagetable, a, 1)) == 0)
+      return -1;
+    if(*pte & PTE_VALID)
+      panic("mappages: remap");
+    *pte = PA2PTE(pa) | perm | PTE_VALID;
+    if(a == last)
+      break;
+    a += PAGESIZE;
+    pa += PAGESIZE;
+  }
+  return 0;
+}
+
+/*
 // Create PTEs for virtual addresses starting at vAddr that refer to
 // physical addresses starting at pAddr. vaddr and size might not
 // be page-aligned. Returns 0 on success, -1 if walk() couldn't
 // allocate a needed page-table page.
 
-int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paddr, uint64_t mmuflags)
+int mmu_map_pages_(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t paddr, uint64_t mmuflags)
 {
   uint64_t a, last;
   uintptr_t lntable;
@@ -140,7 +189,7 @@ int mmu_map_pages(uintptr_t pagetable, uint64_t vaddr, uint64_t size, uint64_t p
   
   return 0;
 }
-
+*/
 
 void mmu_ln_setentry(uint32_t ptlevel, uintptr_t lnvaddr, uintptr_t paddr,
                      uintptr_t vaddr, uint64_t mmuflags)
@@ -244,8 +293,9 @@ size_t mmu_get_region_size(uint32_t ptlevel)
 
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
-void mmu_free_walk(pagetable_t pagetable)
-{
+void 
+mmu_free_walk(pagetable_t pagetable) {
+
   // there are 2^9 = 512 PTEs in a page table.
   for(int i = 0; i < 512; i++){
     pte_t pte = pagetable[i];
@@ -264,23 +314,24 @@ void mmu_free_walk(pagetable_t pagetable)
 // Load the user initcode into address 0 of pagetable,
 // for the very first process.
 // sz must be less than a page.
-void mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz)
-{
+void 
+mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz) {
+  
   char *mem;
-
+  printf("[MMU] init user first page 0x%lx\n", pagetable);
   if(sz >= PAGESIZE)
     panic("[MMU] mmu_user_uvmfirst: more than a page");
   mem = pg_alloc();
   memset(mem, 0, PAGESIZE);
   mmu_map_pages((uintptr_t)pagetable, 0, PAGESIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
+
   memmove(mem, src, sz);
 }
 
 // Free user memory pages,
 // then free page-table pages.
 void
-mmu_user_pg_free(pagetable_t pagetable, uint64 sz)
-{
+mmu_user_pg_free(pagetable_t pagetable, uint64 sz) {
   if(sz > 0)
     mmu_user_unmap(pagetable, 0, PGROUNDUP(sz)/PAGESIZE, 1);
   mmu_free_walk(pagetable);
@@ -290,8 +341,7 @@ mmu_user_pg_free(pagetable_t pagetable, uint64 sz)
 // page-aligned. The mappings must exist.
 // Optionally free the physical memory.
 void
-mmu_user_unmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
-{
+mmu_user_unmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free) {
   uint64 a;
   pte_t *pte;
 
@@ -318,7 +368,8 @@ mmu_user_unmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 *   create an empty user page table.
 *   returns 0 if out of memory.
 */ 
-pagetable_t mmu_user_pt_create() {
+pagetable_t 
+mmu_user_pt_create() {
 
   pagetable_t pagetable;
   pagetable = (pagetable_t) pg_alloc();

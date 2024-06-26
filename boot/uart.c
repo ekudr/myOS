@@ -182,8 +182,7 @@ void lib_putc(char ch) {
 }
 
 void _putchar(char character){
-    if (character == '\n') uart_putc('\r');
-    lib_putc(character);   
+  sbi_console_putc(character);   
 }
 
 void lib_puts(char *s) {

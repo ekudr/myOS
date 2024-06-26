@@ -2,24 +2,9 @@ OUTPUT_ARCH( "riscv" )
 
 ENTRY( _start )
 
-MEMORY
-{
-    ksram (rwx) : ORIGIN = 0x40200000, LENGTH = 4048K   /* w/ cache */
-    pgram (rwx) : ORIGIN = 0x40600000, LENGTH = 4096K   /* w/ cache */
-}
 
 OUTPUT_ARCH("riscv")
 
-/* Provide the kernel boundaries */
-
-__ksram_start = ORIGIN(ksram);
-__ksram_size = LENGTH(ksram);
-__ksram_end = ORIGIN(ksram) + LENGTH(ksram);
-
-/* Page heap */
-
-__pgheap_start = ORIGIN(pgram);
-__pgheap_size = LENGTH(pgram);
 
 
 PHDRS
@@ -31,7 +16,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0x40200000;
+    . = 0x80200000;
     _start = .;
 
     .text : { *(.text .text.*)

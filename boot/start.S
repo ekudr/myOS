@@ -31,6 +31,8 @@ start_entry:
 	la a2, boot_cpu_hartid
 	sd a0, (a2)
 
+    mv tp,a0
+
     /*  Set stack */
     la t0, _stack_top   /* Stack base */
     li t1, 4096     /* Stack size */
@@ -52,7 +54,7 @@ _hart_start:
     csrw sie, zero
     csrw sip, zero
 
-    move tp,a0
+    mv tp,a0
 
         /*  Set stack */
     la t0, _stack_top   /* Stack base */

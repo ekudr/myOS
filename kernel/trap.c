@@ -129,7 +129,7 @@ void usertrap(void) {
 
 //    if(killed(t))
 //      exit(-1);
-
+    printf("[SCHED] syscall from userspace\n");
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
     t->trapframe->epc += 4;
@@ -172,6 +172,7 @@ usertrapret(void)
 
   // send syscalls, interrupts, and exceptions to uservec in trampoline.S
   uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
+  
   w_stvec(trampoline_uservec);
 
   // set up trapframe values that uservec will need when
@@ -200,5 +201,6 @@ usertrapret(void)
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
   uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
+ 
   ((void (*)(uint64))trampoline_userret)(satp);
 }

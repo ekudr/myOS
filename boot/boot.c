@@ -7,7 +7,6 @@
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
 
-
 u64 boot_cpu_hartid;
 static char* version = VERSION_STR;
 
@@ -75,11 +74,11 @@ int boot_start(void)
 
 //    sbi_ecall_console_puts("\nTest SBI console output\n");
 
-	uart_init();
+//	uart_init();
 
-    lib_puts("\nmyOS version ");
-    lib_puts( version);
-    lib_putc('\n');
+    printf("\nmyOS version ");
+    printf(version);
+    printf("\n");
 
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
     printf("TP is 0x%lX\n", r_tp());
@@ -105,16 +104,25 @@ int boot_start(void)
 
 	printf("Done.\n");
 
+
+
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
 
+    sbi_hsm_hart_start(1, (uint64)_hart_start, 2);
     sbi_hsm_hart_start(2, (uint64)_hart_start, 2);
     sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
     sbi_hsm_hart_start(4, (uint64)_hart_start, 2);
 
 	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
     printf("stack pointer: 0x%lX\n", r_sp());
+
+    printf("[USER] init ... ");
+    shed_user_init();
+    printf("Done.\n");
+
+
 	scheduler();
     while(1){}
 }

@@ -3,10 +3,6 @@
 #ifndef _SYS_RISCV_H
 #define _SYS_RISCV_H
 
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t; // 512 PTEs
-
-
 // Supervisor Status Register, sstatus
 
 #define SSTATUS_SPP (1L << 8)  // Previous mode, 1=Supervisor, 0=User

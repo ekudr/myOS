@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <spinlock.h>
 #include <sys/riscv.h>
+#include <mmu.h>
 
 
 #define NTASKS CONFIG_NUM_TASKS 

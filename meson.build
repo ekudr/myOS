@@ -11,7 +11,8 @@ objcopy = find_program('objcopy')
 c_args = [
     '-nostdlib',
     '-fno-stack-protector',
-    '-static',    
+    '-static', 
+    '-mcmodel=medany',   
 ]
 
 

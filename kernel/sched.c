@@ -23,8 +23,8 @@ static void free_task(struct task *t);
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void sched_map_stacks(uintptr_t pgt_base)
-{
+void 
+sched_map_stacks(uintptr_t pgt_base) {
   struct task *t;
   int status;
   
@@ -76,7 +76,8 @@ struct cpu* mycpu(void) {
 }
 
 // Return the current struct proc *, or zero if none.
-struct task* mytask(void) {
+struct task* 
+mytask(void) {
   push_off();
   struct cpu *c = mycpu();
   struct task *p = c->task;
@@ -232,14 +233,15 @@ pagetable_t task_pagetable(struct task *t) {
   pagetable = mmu_user_pt_create();
   if(pagetable == 0)
     return 0;
-
+ 
   // map the trampoline code (for system call return)
   // at the highest user virtual address.
   // only the supervisor uses it, on the way
   // to/from user space, so not PTE_U.
-  if(mmu_map_pages(pagetable, TRAMPOLINE, PAGESIZE,
-              (uint64)trampoline, PTE_R | PTE_X) < 0){
-    mmu_user_pg_free(pagetable, 0);
+ 
+  if(mmu_map_pages(pagetable, TRAMPOLINE, PAGESIZE, (uint64)trampoline, PTE_R | PTE_X) < 0){    
+    mmu_user_pg_free(pagetable, 0);    
+    
     return 0;
   }
 
@@ -278,7 +280,7 @@ static struct task* alloc_task(void) {
   struct task *t;
 
   for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
-    acquire(&t->lock);
+    acquire(&t->lock);    
     if(t->state == UNUSED) {
       goto found;
     } else {
@@ -288,11 +290,12 @@ static struct task* alloc_task(void) {
   return 0;
 
 found:
+
   t->pid = alloc_pid();
   t->state = USED;
 
   // Allocate a trapframe page.
-  if((t->trapframe = (struct trapframe *)pg_alloc()) == 0){
+  if((t->trapframe = (struct trapframe *)pg_alloc()) == 0){  
     free_task(t);
     release(&t->lock);
     return 0;
@@ -306,9 +309,10 @@ found:
     return 0;
   }
 
-  // Set up new context to start executing at forkret,
+   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&t->context, 0, sizeof(t->context));
+
   t->context.ra = (uint64)forkret;
   t->context.sp = t->kstack + PAGESIZE;
 
@@ -366,13 +370,14 @@ u8 initcode[] = {
 };
 
 // Set up first user process.
-void shed_user_init(void) {
+void 
+shed_user_init(void) {
 
   struct task *t;
 
   t = alloc_task();
   inittask = t;
-  
+
   // allocate one user page and copy initcode's instructions
   // and data into it.
   mmu_user_vmfirst(t->pagetable, initcode, sizeof(initcode));
@@ -386,6 +391,8 @@ void shed_user_init(void) {
 //  t->cwd = namei("/");
 
   t->state = RUNNABLE;
+//  printf("[SCHED] new task allocated pid 0x%d state %d PT 0x%lX TrpFr 0x%lX\n", inittask->pid, inittask->state, inittask->pagetable, inittask->trapframe);
+//  printf("[SCHED] context ra 0x%lX sp %lX ecp 0x%lX sp 0x%lX\n", inittask->context.ra, (uint64)inittask->context.sp, inittask->trapframe->epc, inittask->trapframe->sp);
 
   release(&t->lock);
 }
