@@ -128,6 +128,14 @@ r_satp()
   return x;
 }
 
+// flush the TLB.
+static inline void
+sfence_vma()
+{
+  // the zero, zero means flush all TLB entries.
+  asm volatile("sfence.vma zero, zero");
+}
+
 // enable device interrupts
 static inline void intr_on() {
   w_sstatus(r_sstatus() | SSTATUS_SIE);

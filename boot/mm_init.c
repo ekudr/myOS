@@ -24,6 +24,7 @@
 #include <spinlock.h>
 #include <mmu.h>
 #include <sched.h>
+#include <sys/riscv.h>
 
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
@@ -126,7 +127,15 @@ void mm_init(void) {
   printf("Done.\n");
 
   printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
-  mmu_enable(g_kernel_pgt_base, 0);
-  mmu_invalidate_tlbs();
+    // wait for any previous writes to the page table memory to finish.
+  sfence_vma();
+
+  w_satp(MAKE_SATP(g_kernel_pgt_base));
+
+  // flush stale entries from the TLB.
+  sfence_vma();
+
+//  mmu_enable(g_kernel_pgt_base, 0);
+//  mmu_invalidate_tlbs();
   printf("[MMU] init is Done\n");
 }
