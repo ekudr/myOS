@@ -13,6 +13,11 @@ c_args = [
     '-fno-stack-protector',
     '-static', 
     '-mcmodel=medany',   
+#    '-mcpu=sifive-u74',
+    '-mtune=sifive-7-series',
+    '-mno-relax',
+    '-ffreestanding',
+    '-fno-omit-frame-pointer',
 ]
 
 
