@@ -2,17 +2,8 @@ OUTPUT_ARCH( "riscv" )
 
 ENTRY( _start )
 
-
 OUTPUT_ARCH("riscv")
 
-
-
-PHDRS
-{
-    headers PT_PHDR PHDRS;
-    text PT_LOAD FILEHDR PHDRS;
-    data PT_LOAD;
-}
 
 SECTIONS
 {
@@ -25,24 +16,24 @@ SECTIONS
         *(trampsec)
         . = ALIGN(0x1000);
         ASSERT(. - _trampoline == 0x1000, "error: trampoline larger than one page");
-     } :text
+     }
     
     .data :  ALIGN(8)  { 
         *(.data)  
-    } :data
+    }
 
     .sdata :ALIGN(8) {
 	    __global_pointer$ = . + 0x800;
         *(.sdata .sdata.* .sdata2.*)
-    } :data  
+    } 
 
-    .bss : { 
+    .bss : ALIGN(8) { 
         _bss_start = .;
         *(.bss) 
         _bss_end = .;
-    } :data
+    }
     
-    .got : { *(.got*) } :data
+    .got : ALIGN(8) { *(.got*) }
 
      /* Page tables here, align to 4K boundary */
 
@@ -51,7 +42,7 @@ SECTIONS
         *(.pgtables)
         . = ALIGN(4);
         _pgtable_end = .;
-    } :data
+    }
 
     /* Stack top */
 
@@ -59,6 +50,8 @@ SECTIONS
         _stack_top = .;
         . = . + 0x1000;
         _estack = .;
-    } :data
+    }
+
+    /DISCARD/ : { *(.comment .note .eh_frame) }
 
 }
