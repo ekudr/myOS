@@ -6,6 +6,9 @@
 /* OS loader
 */
 
+#define __ASSEMBLY__
+#define CONFIG_64BIT
+
 #include <asm/asm.h>
 
     .section .text.enter , "ax"
@@ -22,7 +25,7 @@ start_entry:
     csrw sie, zero
     csrw sip, zero
 
-//    load_global_pointer
+    load_global_pointer
 
     /* Disable FPU & VECTOR */
 //    li t0, (0x6000 | 0x600)
