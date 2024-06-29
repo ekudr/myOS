@@ -3,8 +3,10 @@
 #include <spinlock.h>
 #include <sys/riscv.h>
 #include <sched.h>
+#include <trap.h>
 #include <jh7110_memmap.h>
 #include <mmu.h>
+#include <syscall.h>
 
 struct spinlock tickslock;
 uint64_t ticks;
@@ -63,7 +65,7 @@ clockintr()
 // 1 if other device,
 // 0 if not recognized.
 int
-devintr()
+devintr(void)
 {
   uint64_t scause = r_scause();
 
@@ -127,9 +129,9 @@ void usertrap(void) {
   if(r_scause() == 8){
     // system call
 
-//    if(killed(t))
-//      exit(-1);
-    printf("[SCHED] syscall from userspace\n");
+    if(killed(t))
+      exit(-1);
+//    printf("[SCHED] syscall from userspace\n");
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
     t->trapframe->epc += 4;
@@ -138,7 +140,7 @@ void usertrap(void) {
     // so enable only now that we're done with those registers.
     intr_on();
 
-//    syscall();
+    syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -147,8 +149,8 @@ void usertrap(void) {
     setkilled(t);
   }
 
- // if(killed(t))
- //   exit(-1);
+  if(killed(t))
+    exit(-1);
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)

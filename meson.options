@@ -1,0 +1,3 @@
+option('board', type : 'array', 
+choices : ['vf2', 'qemu'],
+description : 'Hardware board') 

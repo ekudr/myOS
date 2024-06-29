@@ -2,6 +2,7 @@
 #include <spinlock.h>
 #include <jh7110_memmap.h>
 #include <sbi_ecall_interface.h>
+#include <sched.h>
 
 // the UART control registers.
 // some have different meanings for
@@ -45,9 +46,9 @@ uint64_t uart_inited;
 
 void uart_start();
 
-static inline void sbi_console_putc(char ch) {
-    sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
-}
+
+
+void sbi_console_putc(char ch);
 
 
 void uart_init(void) {

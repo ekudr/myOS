@@ -10,15 +10,8 @@
 #define NTASKS CONFIG_NUM_TASKS 
 
 
-struct cpu* mycpu(void);
-int cpuid(void);
-struct task* mytask(void);
-void swtch(struct context*, struct context*);
-void yield(void);
-void sched_map_stacks(uintptr_t pgt_base);
-
 // Saved registers for kernel context switches.
-struct context {
+typedef struct context {
   uint64 ra;
   uint64 sp;
 
@@ -35,7 +28,9 @@ struct context {
   uint64 s9;
   uint64 s10;
   uint64 s11;
-};
+} context;
+
+
 
 // per-process data for the trap handling code in trampoline.S.
 // sits in a page by itself just under the trampoline page in the
@@ -49,7 +44,7 @@ struct context {
 // the trapframe includes callee-saved user registers like s0-s11 because the
 // return-to-user path via usertrapret() doesn't return through
 // the entire kernel call stack.
-struct trapframe {
+typedef struct trapframe {
   /*   0 */ uint64 kernel_satp;   // kernel page table
   /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
   /*  16 */ uint64 kernel_trap;   // usertrap()
@@ -86,7 +81,7 @@ struct trapframe {
   /* 264 */ uint64 t4;
   /* 272 */ uint64 t5;
   /* 280 */ uint64 t6;
-};
+} trapframe;
 
 // Per-CPU state.
 struct cpu {
@@ -109,7 +104,7 @@ enum task_state {
 };
 
 // Per-process state
-struct task {
+typedef struct task {
   struct spinlock lock;
 
   // p->lock must be held when using these:
@@ -131,6 +126,28 @@ struct task {
   struct file *ofile[CONFIG_NUM_FILES];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-};
+} task, task_t;
+
+
+struct cpu* mycpu(void);
+int cpuid(void);
+struct task* mytask(void);
+void swtch(context*, context*);
+void sched(void);
+void scheduler(void);
+void wakeup(void *chan);
+void yield(void);
+void reparent(task_t *t); 
+int fork(void);
+void exit(int status);
+void sched_map_stacks(pagetable_t pgt_base);
+void free_task(task_t *t);
+task_t* alloc_task(void);
+void task_freepagetable(pagetable_t pagetable, uint64_t sz);
+void shed_user_init(void);
+int killed(task_t *t);
+void setkilled(task_t *t);
+
+
 
 #endif /* _SHED_H */

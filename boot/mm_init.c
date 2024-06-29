@@ -65,7 +65,7 @@ void kernel_mapping(void) {
   int status;
  
   /* Allocate page for L1 */
-  g_kernel_pgt_base = (uintptr_t)pg_alloc();
+  g_kernel_pgt_base = (pagetable_t)pg_alloc();
   if (!g_kernel_pgt_base) {
     printf("[MMU] Can NOT allocate page\n");
     while (1) {}
@@ -77,7 +77,7 @@ void kernel_mapping(void) {
 
   printf("[MMU] map I/O regions\n");
 
-  mmu_ln_map_region(1, g_kernel_pgt_base, MMU_IO_BASE, MMU_IO_BASE,
+  mmu_ln_map_region(1, (uint64_t)g_kernel_pgt_base, MMU_IO_BASE, MMU_IO_BASE,
                     MMU_IO_SIZE, MMU_IO_FLAGS);
 
   /* Map the kernel text and data for L2/L3 */

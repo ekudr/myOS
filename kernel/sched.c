@@ -4,6 +4,7 @@
 #include <rv_mmu.h>
 #include <mmu.h>
 #include <string.h>
+#include <trap.h>
 
 
 struct cpu cpus[CONFIG_MP_NUM_CPUS];
@@ -17,14 +18,14 @@ struct spinlock pid_lock;
 
 extern char trampoline[]; // trampoline.S
 
-static void free_task(struct task *t);
+
 
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
 void 
-sched_map_stacks(uintptr_t pgt_base) {
+sched_map_stacks(pagetable_t pgt_base) {
   struct task *t;
   int status;
   
@@ -85,6 +86,97 @@ mytask(void) {
   return p;
 }
 
+// Wake up all processes sleeping on chan.
+// Must be called without any p->lock.
+void
+wakeup(void *chan)
+{
+  struct task *t;
+
+  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
+    if(t != mytask()){
+      acquire(&t->lock);
+      if(t->state == SLEEPING && t->chan == chan) {
+        t->state = RUNNABLE;
+      }
+      release(&t->lock);
+    }
+  }
+}
+
+// Exit the current process.  Does not return.
+// An exited process remains in the zombie state
+// until its parent calls wait().
+void
+exit(int status) {
+
+  struct task *t = mytask();
+
+  if(t == inittask)
+    panic("init exiting");
+/*
+  // Close all open files.
+  for(int fd = 0; fd < NOFILE; fd++){
+    if(p->ofile[fd]){
+      struct file *f = p->ofile[fd];
+      fileclose(f);
+      p->ofile[fd] = 0;
+    }
+  }
+
+  begin_op();
+  iput(t->cwd);
+  end_op();
+  */
+  t->cwd = 0;
+
+  acquire(&wait_lock);
+
+  // Give any children to init.
+  reparent(t);
+
+  // Parent might be sleeping in wait().
+  wakeup(t->parent);
+  
+  acquire(&t->lock);
+
+  t->xstate = status;
+  t->state = ZOMBIE;
+
+  release(&wait_lock);
+
+  // Jump into the scheduler, never to return.
+  sched();
+  panic("zombie exit");
+}
+
+// Switch to scheduler.  Must hold only t->lock
+// and have changed task->state. Saves and restores
+// intena because intena is a property of this
+// kernel thread, not this CPU. It should
+// be task->intena and task->noff, but that would
+// break in the few places where a lock is held but
+// there's no process.
+void sched(void) {
+  int intena;
+  struct task *t = mytask();
+
+  if(!holding(&t->lock))
+    panic("sched t->lock");
+  if(mycpu()->noff != 1)
+    panic("sched locks");
+  if(t->state == RUNNING)
+    panic("sched running");
+  if(intr_get())
+    panic("sched interruptible");
+
+  intena = mycpu()->intena;
+  swtch(&t->context, &mycpu()->context);
+  mycpu()->intena = intena;
+}
+
+
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -121,30 +213,6 @@ void scheduler(void) {
 }
 
 
-// Switch to scheduler.  Must hold only t->lock
-// and have changed task->state. Saves and restores
-// intena because intena is a property of this
-// kernel thread, not this CPU. It should
-// be task->intena and task->noff, but that would
-// break in the few places where a lock is held but
-// there's no process.
-void sched(void) {
-  int intena;
-  struct task *t = mytask();
-
-  if(!holding(&t->lock))
-    panic("sched t->lock");
-  if(mycpu()->noff != 1)
-    panic("sched locks");
-  if(t->state == RUNNING)
-    panic("sched running");
-  if(intr_get())
-    panic("sched interruptible");
-
-  intena = mycpu()->intena;
-  swtch(&t->context, &mycpu()->context);
-  mycpu()->intena = intena;
-}
 
 // Give up the CPU for one scheduling round.
 void yield(void) {
@@ -153,6 +221,73 @@ void yield(void) {
   t->state = RUNNABLE;
   sched();
   release(&t->lock);
+}
+
+// Create a new process, copying the parent.
+// Sets up child kernel stack to return as if from fork() system call.
+int
+fork(void)
+{
+  int pid;
+  struct task *nt;
+  struct task *t = mytask();
+
+  // Allocate process.
+  if((nt = alloc_task()) == 0){
+    return -1;
+  }
+/*
+  // Copy user memory from parent to child.
+  if(uvmcopy(t->pagetable, nt->pagetable, t->sz) < 0){
+    free_task(nt);
+    release(&nt->lock);
+    return -1;
+  }
+  */
+  nt->sz = t->sz;
+
+  // copy saved user registers.
+  *(nt->trapframe) = *(t->trapframe);
+
+  // Cause fork to return 0 in the child.
+  nt->trapframe->a0 = 0;
+/*
+  // increment reference counts on open file descriptors.
+  for(i = 0; i < CONFIG_NUM_FILES; i++)
+    if(t->ofile[i])
+      nt->ofile[i] = filedup(t->ofile[i]);
+  nt->cwd = idup(t->cwd);
+*/
+  safestrcpy(nt->name, t->name, sizeof(t->name));
+
+  pid = nt->pid;
+
+  release(&nt->lock);
+
+  acquire(&wait_lock);
+  nt->parent = t;
+  release(&wait_lock);
+
+  acquire(&nt->lock);
+  nt->state = RUNNABLE;
+  release(&nt->lock);
+
+  return pid;
+}
+
+
+// Pass t's abandoned children to init.
+// Caller must hold wait_lock.
+void
+reparent(task_t *t) {
+  task_t *tt;
+
+  for(tt = tasks; tt < &tasks[CONFIG_NUM_TASKS]; tt++){
+    if(tt->parent == t){
+      tt->parent = inittask;
+      wakeup(inittask);
+    }
+  }
 }
 
 // A fork child's very first scheduling by scheduler()
@@ -205,23 +340,7 @@ void sleep(void *chan, struct spinlock *lk)
   acquire(lk);
 }
 
-// Wake up all processes sleeping on chan.
-// Must be called without any p->lock.
-void
-wakeup(void *chan)
-{
-  struct task *t;
 
-  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
-    if(t != mytask()){
-      acquire(&t->lock);
-      if(t->state == SLEEPING && t->chan == chan) {
-        t->state = RUNNABLE;
-      }
-      release(&t->lock);
-    }
-  }
-}
 
 // Create a user page table for a given process, with no user memory,
 // but with trampoline and trapframe pages.
@@ -275,7 +394,7 @@ int alloc_pid() {
 * and return with t->lock held.
 * If there are no free procs, or a memory allocation fails, return 0.
 */ 
-static struct task* alloc_task(void) {
+task_t* alloc_task(void) {
 
   struct task *t;
 
@@ -319,14 +438,22 @@ found:
   return t;
 }
 
-/*
-*   free a task structure and the data hanging from it,
-*   including user pages.
-*   p->lock must be held.
-*/ 
 
-static void free_task(struct task *t)
-{
+// Free a process's page table, and free the
+// physical memory it refers to.
+void
+task_freepagetable(pagetable_t pagetable, uint64_t sz) {
+  mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
+  mmu_user_unmap(pagetable, TRAPFRAME, 1, 0);
+  mmu_user_pg_free(pagetable, sz);
+}
+
+
+//   free a task structure and the data hanging from it,
+//   including user pages.
+//   t->lock must be held.
+void 
+free_task(task_t *t) {
   if(t->trapframe)
     pg_free((void*)t->trapframe);
   t->trapframe = 0;
@@ -345,15 +472,7 @@ static void free_task(struct task *t)
 
 
 
-// Free a process's page table, and free the
-// physical memory it refers to.
-void
-task_freepagetable(pagetable_t pagetable, uint64 sz)
-{
-  mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
-  mmu_user_unmap(pagetable, TRAPFRAME, 1, 0);
-  mmu_user_pg_free(pagetable, sz);
-}
+
 
 
 // a user program that calls exec("/init")
@@ -380,7 +499,7 @@ shed_user_init(void) {
 
   // allocate one user page and copy initcode's instructions
   // and data into it.
-  mmu_user_vmfirst(t->pagetable, initcode, sizeof(initcode));
+  mmu_user_vmfirst(t->pagetable, (uint64_t*)initcode, sizeof(initcode));
   t->sz = PAGESIZE;
 
   // prepare for the very first "return" from kernel to user.
@@ -420,14 +539,14 @@ int kill(int pid)
   return -1;
 }
 
-void setkilled(struct task *t)
+void setkilled(task_t *t)
 {
   acquire(&t->lock);
   t->killed = 1;
   release(&t->lock);
 }
 
-int killed(struct task *t)
+int killed(task_t *t)
 {
   int k;
   

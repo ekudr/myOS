@@ -18,12 +18,15 @@ c_args = [
     '-mno-relax',
     '-ffreestanding',
     '-fno-omit-frame-pointer',
+    '-O',
 ]
 
+board = get_option('board')
 
 subdir('include')
 subdir('lib')
 subdir('kernel')
+subdir('drivers')
 subdir('boot')
 
 

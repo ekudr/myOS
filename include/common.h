@@ -10,6 +10,10 @@
 
 #define locate_data(n) __attribute__((section(n)))
 
+// number of elements in fixed-size array
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+
 void _putchar(char character);
 
 void lib_putc(char ch);

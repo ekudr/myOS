@@ -10,6 +10,7 @@ kernel_sources = [
     'trampoline.S',
     'plic.c',
 #    'console.c',
+    'syscall.c',
 ]
 
 kernel_a = static_library(

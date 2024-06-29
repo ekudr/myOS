@@ -38,7 +38,7 @@ void pg_free(void *pa) {
 
   struct sq_entry_s *r;
 
-  if(((uint64)pa % PAGESIZE) != 0 || (char*)pa < mem_start || (uint64)pa >= mem_end) {
+  if(((uint64)pa % PAGESIZE) != 0 || (uint64)pa < mem_start || (uint64)pa >= mem_end) {
     panic("pg_free");
   }
     

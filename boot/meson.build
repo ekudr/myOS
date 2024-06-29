@@ -39,10 +39,12 @@ boot_elf = executable(
     link_with: [
         libc_a,
         kernel_a,
+        drivers_a,
     ],
     link_depends: [
         linker_script_deps,
         libc_a,
         kernel_a,
+        drivers_a,
     ],
 )

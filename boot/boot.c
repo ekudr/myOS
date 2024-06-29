@@ -3,6 +3,7 @@
 #include <sbi_ecall_interface.h>
 #include <sys/riscv.h>
 #include <mmu.h> 
+#include <sched.h>
 
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
@@ -11,13 +12,18 @@ u64 boot_cpu_hartid;
 static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
-#define FB_LEN	3840*2160*3
+#define FB_LEN	3840*2160*4
 
 void plic_init(void); 
 void tasks_init(void);
 void mm_init(void);
 void kernelvec();
 void _hart_start();
+void trap_init(void);
+void sbi_init (void);
+int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
+int sd_init(void);
+
 
 /*
 void memset(void *b, int c, int len)
@@ -36,7 +42,7 @@ void boot_init_hart(){
     printf("hart %d starting\n", cpuid());
     printf("stack pointer: 0x%lX\n", r_sp());
 
-    mmu_enable(g_kernel_pgt_base, 0);    // turn on paging
+    mmu_enable((uint64_t)g_kernel_pgt_base, 0);    // turn on paging
     w_stvec((uint64)kernelvec);   // install kernel trap vector
 //    plicinithart();   // ask PLIC for device interrupts
 
@@ -69,10 +75,6 @@ int boot_start(void)
     }
 
 	sbi_init();
-//	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, 100000, 0, 0, 0, 0, 0);
-//	w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
-
-//    sbi_ecall_console_puts("\nTest SBI console output\n");
 
 //	uart_init();
 
@@ -104,7 +106,10 @@ int boot_start(void)
 
 	printf("Done.\n");
 
-
+    printf("[SD_CARD] init ... ");
+    sd_init();
+    printf("Done.\n");
+    
 
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());

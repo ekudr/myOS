@@ -3,6 +3,7 @@
 #include <sys/riscv.h>
 #include <jh7110_memmap.h>
 #include <sched.h>
+#include <trap.h>
 
 /* Find a better place for the read/write fuctions */
 static inline uint32_t getreg32(const volatile uint64_t a) {
@@ -49,7 +50,7 @@ void plic_init(void) {
   printf("[PLIC] enable 2 register 0x%lX\n",getreg32((uintptr_t)(JH7110_PLIC_ENABLE2)));
 
 
-//  sbi_set_timer(1000000);
+  sbi_set_timer(1000000);
 
 }
 

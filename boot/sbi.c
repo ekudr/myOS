@@ -87,6 +87,10 @@ int sbi_hsm_hart_get_status(unsigned long hartid) {
         return ret.error;
 }
 
+void sbi_console_putc(char ch) {
+    sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
+}
+
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv) {
     struct sbiret ret;
 

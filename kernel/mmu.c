@@ -23,7 +23,7 @@
 #include <sys/riscv.h>
 #include <mmu.h>
 
-uintptr_t   g_kernel_pgt_base;
+pagetable_t  g_kernel_pgt_base;
 
 
 static const size_t g_pgt_sizes[] =
@@ -130,7 +130,24 @@ mmu_map_pages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm
 
   if(size == 0)
     panic("mappages: size");
-  
+
+  /* Test if this is a leaf PTE, if it is, set A+D even if they are not used
+   * by the implementation.
+   *
+   * If not, clear A+D+U because the spec. says:
+   * For non-leaf PTEs, the D, A, and U bits are reserved for future use and
+   * must be cleared by software for forward compatibility.
+   */
+
+  if (perm & PTE_LEAF_MASK)
+    {
+      perm |= (PTE_A | PTE_D);
+    }
+  else
+    {
+      perm &= ~(PTE_A | PTE_D | PTE_U);
+    }  
+
   a = PGROUNDDOWN(va);
   last = PGROUNDDOWN(va + size - 1);
   for(;;){
@@ -323,7 +340,7 @@ mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz) {
     panic("[MMU] mmu_user_uvmfirst: more than a page");
   mem = pg_alloc();
   memset(mem, 0, PAGESIZE);
-  mmu_map_pages((uintptr_t)pagetable, 0, PAGESIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
+  mmu_map_pages(pagetable, 0, PAGESIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
 
   memmove(mem, src, sz);
 }
