@@ -3,6 +3,54 @@
 #ifndef _SYS_RISCV_H
 #define _SYS_RISCV_H
 
+#include "types.h"
+
+static inline uint8_t getreg8(const volatile uintreg_t a)
+{
+  uint8_t v;
+  __asm__ __volatile__("lb %0, 0(%1)" : "=r" (v) : "r" (a));
+  return v;
+}
+
+static inline void putreg8(uint8_t v, const volatile uintreg_t a)
+{
+  __asm__ __volatile__("sb %0, 0(%1)" : : "r" (v), "r" (a));
+}
+
+static inline uint16_t getreg16(const volatile uintreg_t a)
+{
+  uint16_t v;
+  __asm__ __volatile__("lh %0, 0(%1)" : "=r" (v) : "r" (a));
+  return v;
+}
+
+static inline void putreg16(uint16_t v, const volatile uintreg_t a)
+{
+  __asm__ __volatile__("sh %0, 0(%1)" : : "r" (v), "r" (a));
+}
+
+static inline uint32_t getreg32(const volatile uint64_t a) {
+  uint32_t v;
+  __asm__ __volatile__("lw %0, 0(%1)" : "=r" (v) : "r" (a));
+  return v;
+}
+
+static inline void putreg32(uint32_t v, const volatile uint64_t a) {
+  __asm__ __volatile__("sw %0, 0(%1)" : : "r" (v), "r" (a));
+}
+
+static inline uint64_t getreg64(const volatile uintreg_t a)
+{
+  uint64_t v;
+  __asm__ __volatile__("ld %0, 0(%1)" : "=r" (v) : "r" (a));
+  return v;
+}
+
+static inline void putreg64(uint64_t v, const volatile uintreg_t a)
+{
+  __asm__ __volatile__("sd %0, 0(%1)" : : "r" (v), "r" (a));
+}
+
 // Supervisor Status Register, sstatus
 
 #define SSTATUS_SPP (1L << 8)  // Previous mode, 1=Supervisor, 0=User

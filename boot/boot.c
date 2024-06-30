@@ -107,10 +107,10 @@ int boot_start(void)
 	printf("Done.\n");
 
     printf("[SD_CARD] init ... ");
-    sd_init();
+    //sd_init();
+    mmc_init();
     printf("Done.\n");
     
-
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();

@@ -5,16 +5,7 @@
 #include <sched.h>
 #include <trap.h>
 
-/* Find a better place for the read/write fuctions */
-static inline uint32_t getreg32(const volatile uint64_t a) {
-  uint32_t v;
-  __asm__ __volatile__("lw %0, 0(%1)" : "=r" (v) : "r" (a));
-  return v;
-}
 
-static inline void putreg32(uint32_t v, const volatile uint64_t a) {
-  __asm__ __volatile__("sw %0, 0(%1)" : : "r" (v), "r" (a));
-}
 
 
 /*

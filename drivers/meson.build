@@ -1,7 +1,7 @@
 drivers_sources = [
     'spi.c',
     'sd.c',
-#    'switch.S',
+    'mmc.c',
 #    'pgman.c',
 #    'mmu.c',
 #    'trap.c',

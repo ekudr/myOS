@@ -72,7 +72,7 @@
 #define JH7110_PLIC_SCLAIM(hart) (JH7110_PLIC_CLAIM + (hart)*0x2000)
 
 
-
+#define JH7110_SDIO1_BASE 0x16020000UL
 
 
 /* Kernel code memory (RX) */
