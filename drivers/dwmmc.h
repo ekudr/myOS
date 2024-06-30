@@ -138,9 +138,14 @@
 typedef struct dwmmc
 {
     void *ioaddr;
+    unsigned int clock;
+	unsigned int bus_hz;
+	unsigned int div;
     u32 fifoth_val;
     	/* use fifo mode to read and write data */
 	int fifo_mode;
+
+    unsigned int (*get_mmc_clk)(struct dwmmc *host, uint64 freq);
 
 	/* Starfive: porting from kernel 5.15, fix mmc device power-up sequence */
 	unsigned int flags;

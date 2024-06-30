@@ -107,8 +107,12 @@ int boot_start(void)
 	printf("Done.\n");
 
     printf("[SD_CARD] init ... ");
-    //sd_init();
+ #ifdef _SIFIVE_U_   
+    sd_init();
+ #endif 
+#ifdef _JH7110_
     mmc_init();
+#endif    
     printf("Done.\n");
     
     printf("S mode status register 0x%lX\n",r_sstatus());

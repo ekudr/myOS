@@ -32,10 +32,73 @@ static int dw_wait_reset(dw_mmc *host, u32 value)
 	return 0;
 }
 
+static int dw_setup_bus(dw_mmc *host, u32 freq)
+{
+	u32 div, status;
+	int timeout = 10000;
+	unsigned long sclk;
+
+	if ((freq == host->clock) || (freq == 0))
+		return 0;
+	/*
+	 * If host->get_mmc_clk isn't defined,
+	 * then assume that host->bus_hz is source clock value.
+	 * host->bus_hz should be set by user.
+	 */
+	if (host->get_mmc_clk)
+		sclk = host->get_mmc_clk(host, freq);
+	else if (host->bus_hz)
+		sclk = host->bus_hz;
+	else {
+		printf("%s: Didn't get source clock value.\n", __func__);
+		return -1;
+	}
+
+	if (sclk == freq)
+		div = 0;	/* bypass mode */
+	else
+		div = DIV_ROUND_UP(sclk, 2 * freq);
+
+	writel(host, DWMCI_CLKENA, 0);
+	writel(host, DWMCI_CLKSRC, 0);
+
+	writel(host, DWMCI_CLKDIV, div);
+	writel(host, DWMCI_CMD, DWMCI_CMD_PRV_DAT_WAIT |
+			DWMCI_CMD_UPD_CLK | DWMCI_CMD_START);
+
+	do {
+		status = readl(host, DWMCI_CMD);
+		if (timeout-- < 0) {
+			printf("%s: Timeout!\n", __func__);
+			return -1;
+		}
+	} while (status & DWMCI_CMD_START);
+
+	writel(host, DWMCI_CLKENA, DWMCI_CLKEN_ENABLE |
+			DWMCI_CLKEN_LOW_PWR);
+
+	writel(host, DWMCI_CMD, DWMCI_CMD_PRV_DAT_WAIT |
+			DWMCI_CMD_UPD_CLK | DWMCI_CMD_START);
+
+	timeout = 10000;
+	do {
+		status = readl(host, DWMCI_CMD);
+		if (timeout-- < 0) {
+			printf("%s: Timeout!\n", __func__);
+			return -1;
+		}
+	} while (status & DWMCI_CMD_START);
+
+	host->clock = freq;
+
+	return 0;
+}
+
 int mmc_init() {
 
     host = &mmc1;
     host->ioaddr = (void*)JH7110_SDIO1_BASE;
+    host->bus_hz = 50000000;
     host->fifo_mode = 1;
 
     writel(host, DWMCI_PWREN, 1);
@@ -48,7 +111,7 @@ int mmc_init() {
 	host->flags = 1 << DW_MMC_CARD_NEED_INIT;
 
 	/* Enumerate at 400KHz */
-//	dwmci_setup_bus(host, mmc->cfg->f_min);
+	dw_setup_bus(host, 4000000);
 
 	writel(host, DWMCI_RINTSTS, 0xFFFFFFFF);
 	writel(host, DWMCI_INTMASK, 0);

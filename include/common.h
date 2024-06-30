@@ -13,6 +13,8 @@
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
 
 void _putchar(char character);
 
