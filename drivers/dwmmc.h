@@ -1,6 +1,8 @@
 #ifndef __DWMMC_H
 #define __DWMMC_H
 
+#define BIT(nr)			(1 << (nr))
+
 #define DWMCI_CTRL		0x000
 #define	DWMCI_PWREN		0x004
 #define DWMCI_CLKDIV		0x008
@@ -136,6 +138,18 @@
 typedef struct dwmmc
 {
     void *ioaddr;
+    u32 fifoth_val;
+    	/* use fifo mode to read and write data */
+	int fifo_mode;
+
+	/* Starfive: porting from kernel 5.15, fix mmc device power-up sequence */
+	unsigned int flags;
+#define DW_MMC_CARD_PRESENT	0
+#define DW_MMC_CARD_NEED_INIT	1
+#define DW_MMC_CARD_NO_LOW_PWR	2
+#define DW_MMC_CARD_NO_USE_HOLD 3
+#define DW_MMC_CARD_NEEDS_POLL	4
+
 }dw_mmc;
  
 
