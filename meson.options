@@ -1,3 +1,4 @@
-option('board', type : 'array', 
-choices : ['vf2', 'qemu'],
-description : 'Hardware board') 
+option('board', type : 'combo', 
+        choices : ['vf2', 'qemu'],
+        value : 'vf2',
+        description : 'Hardware board') 

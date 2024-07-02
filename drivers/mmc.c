@@ -32,6 +32,29 @@ static int dw_wait_reset(dw_mmc *host, u32 value)
 	return 0;
 }
 
+
+ static int dw_send_cmd(/*struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data*/)
+{
+    int ret = 0, flags = 0, i;
+	unsigned int timeout = 500;
+	u32 retry = 100000;
+	u32 mask, ctrl;
+	u64 start = timer_get_count();
+//  struct bounce_buffer bbstate;
+
+	while (readl(host, DWMCI_STATUS) & DWMCI_BUSY) {
+		if ((timer_get_count() - start) > timeout) {
+			printf("%s: Timeout on data busy\n", __func__);
+			return -1;
+		}
+	}
+
+    writel(host, DWMCI_RINTSTS, DWMCI_INTMSK_ALL);
+
+
+    return ret;
+}
+
 static int dw_setup_bus(dw_mmc *host, u32 freq)
 {
 	u32 div, status;
@@ -121,14 +144,14 @@ int mmc_init() {
 	writel(host, DWMCI_IDINTEN, 0);
 	writel(host, DWMCI_BMOD, 1);
 
-	if (!host->fifoth_val) {
+//	if (!host->fifoth_val) {
 		uint32_t fifo_size;
 
 		fifo_size = readl(host, DWMCI_FIFOTH);
 		fifo_size = ((fifo_size & RX_WMARK_MASK) >> RX_WMARK_SHIFT) + 1;
 		host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_size / 2 - 1) |
 				TX_WMARK(fifo_size / 2);
-	}
+//	}
 	writel(host, DWMCI_FIFOTH, host->fifoth_val);
 
 	writel(host, DWMCI_CLKENA, 0);
@@ -136,6 +159,8 @@ int mmc_init() {
 
 	if (!host->fifo_mode)
 		writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
+
+    printf("[MMC] fifo size 0x%X\n", fifo_size);
 
     return 0;
 }

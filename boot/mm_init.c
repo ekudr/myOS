@@ -49,8 +49,6 @@
 #define KMM_SPBASE_IDX  2
 
 
-
-
 /* Kernel mappings simply here, mapping is vaddr=paddr */
 
 
@@ -59,6 +57,10 @@ uintptr_t   mem_start;
 uintptr_t   mem_end;
 
 extern char trampoline[], uservec[], userret[];
+
+
+void kmem_init(void);
+
 
 void kernel_mapping(void) {
 
@@ -138,4 +140,8 @@ void mm_init(void) {
 //  mmu_enable(g_kernel_pgt_base, 0);
 //  mmu_invalidate_tlbs();
   printf("[MMU] init is Done\n");
+
+  printf("[KMEM] init ...\n");
+  kmem_init();
+  printf("[MEM] init is Done\n");
 }

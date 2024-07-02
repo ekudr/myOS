@@ -2,7 +2,7 @@ drivers_sources = [
     'spi.c',
     'sd.c',
     'mmc.c',
-#    'pgman.c',
+    'riscv_timer.c',
 #    'mmu.c',
 #    'trap.c',
 #    'kernelvec.S',

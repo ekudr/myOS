@@ -2,6 +2,7 @@
 #include <spi.h>
 #include "sifiveu_spi.h"
 
+int sd_copy(spi_ctrl* spi, void* dst, uint32_t src_lba, size_t size);
 
 #define SD_CMD_GO_IDLE_STATE 0
 #define SD_CMD_SEND_IF_COND 8
@@ -246,10 +247,11 @@ err =  sd_copy(spi, buf, 1, 1);
       printf("[SD_CARD] COPY return %d\n", err);
       panic("SD init");  
   }
-
+/*
 for(int i=0; i<512/4; i++){
   printf("GPT: %d => 0x%X\n", i, buf[i]);
 }
+*/
   return 0; 
 }
 

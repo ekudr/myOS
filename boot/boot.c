@@ -82,6 +82,8 @@ int boot_start(void)
     printf(version);
     printf("\n");
 
+    printf("Timer: 0x%lx\n",timer_get_count());
+
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
     printf("TP is 0x%lX\n", r_tp());
 
@@ -114,7 +116,8 @@ int boot_start(void)
     mmc_init();
 #endif    
     printf("Done.\n");
-    
+
+    printf("Timer: 0x%lx\n",timer_get_count());
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();
