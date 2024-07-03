@@ -124,6 +124,8 @@ int mmc_init() {
     host->bus_hz = 50000000;
     host->fifo_mode = 1;
 
+    printf("[MMC] Hardware Configuration Register 0x%X\n",readl(host, DWMCI_HCON)); 
+
     writel(host, DWMCI_PWREN, 1);
 
     if (!dw_wait_reset(host, DWMCI_RESET_ALL)) {
@@ -144,14 +146,14 @@ int mmc_init() {
 	writel(host, DWMCI_IDINTEN, 0);
 	writel(host, DWMCI_BMOD, 1);
 
-//	if (!host->fifoth_val) {
+	if (!host->fifoth_val) {
 		uint32_t fifo_size;
 
 		fifo_size = readl(host, DWMCI_FIFOTH);
 		fifo_size = ((fifo_size & RX_WMARK_MASK) >> RX_WMARK_SHIFT) + 1;
 		host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_size / 2 - 1) |
 				TX_WMARK(fifo_size / 2);
-//	}
+	}
 	writel(host, DWMCI_FIFOTH, host->fifoth_val);
 
 	writel(host, DWMCI_CLKENA, 0);
@@ -159,8 +161,6 @@ int mmc_init() {
 
 	if (!host->fifo_mode)
 		writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
-
-    printf("[MMC] fifo size 0x%X\n", fifo_size);
 
     return 0;
 }

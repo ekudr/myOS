@@ -63,13 +63,11 @@ void kmem_init(void) {
     fr->flink = fr;
     fr->blink = fr;
     fr->size = KMEM_HEAP_SIZE - sizeof(struct kmem_heap) - sizeof(struct free_chunk);
-    printf("[KMEM] free chunk 0x%lX size 0x%lX\n", fr, fr->size);
+//    printf("[KMEM] free chunk 0x%lX size 0x%lX\n", fr, fr->size);
     kmem->free_queue = fr;
     kmem->alloc_queue = NULL;
     kmem->n_alloc_chunks = 0;
     kmem->n_free_chunks = 1;
-
-    kmem_info();
 }
 
 void *kmem_alloc(uint64 size) {
