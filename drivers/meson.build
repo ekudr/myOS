@@ -3,7 +3,7 @@ drivers_sources = [
     'sd.c',
     'mmc.c',
     'riscv_timer.c',
-#    'mmu.c',
+    'dw_mmc.c',
 #    'trap.c',
 #    'kernelvec.S',
 #    'trampoline.S',

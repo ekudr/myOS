@@ -7,14 +7,25 @@
 #include <printf.h>
 #include <string.h>
 
+typedef enum { false, true } bool;
 
 #define locate_data(n) __attribute__((section(n)))
 #define _ALIGN(n) __attribute__ ((aligned (n)))
+
+
+#define BIT(nr)			(1 << (nr))
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
+#define min(x, y) ({				\
+	typeof(x) _min1 = (x);			\
+	typeof(y) _min2 = (y);			\
+	(void) (&_min1 == &_min2);		\
+	_min1 < _min2 ? _min1 : _min2; })
+
 
 
 void _putchar(char character);

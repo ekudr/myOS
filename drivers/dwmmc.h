@@ -1,7 +1,7 @@
 #ifndef __DWMMC_H
 #define __DWMMC_H
 
-#define BIT(nr)			(1 << (nr))
+#include <mmc.h>
 
 #define DWMCI_CTRL		0x000
 #define	DWMCI_PWREN		0x004
@@ -144,7 +144,10 @@ typedef struct dwmmc
     u32 fifoth_val;
     	/* use fifo mode to read and write data */
 	int fifo_mode;
+	struct mmc *mmc;
+	void *priv;
 
+	int (*clksel)(struct dwmmc *host);
     unsigned int (*get_mmc_clk)(struct dwmmc *host, uint64 freq);
 
 	/* Starfive: porting from kernel 5.15, fix mmc device power-up sequence */
