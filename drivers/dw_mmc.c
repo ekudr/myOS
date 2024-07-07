@@ -9,7 +9,6 @@
 dw_mmc *host;
 
 dw_mmc dw_mmc0;
-struct mmc_config dw_mmc0_cfg;
 
 
 static inline void writel(dw_mmc *host, int reg, u32 val){
@@ -396,7 +395,7 @@ static int dw_setup_bus(dw_mmc *host, u32 freq)
 
 int dw_set_ios(struct mmc *mmc)
 {
-	struct dwmmc *host = (struct dwmmc *)mmc->priv;
+	host = (struct dwmmc *)mmc->priv;
 	u32 ctype, regs;
 
 	printf("Buswidth = %d, clock: %d\n", mmc->bus_width, mmc->clock);
@@ -453,7 +452,7 @@ int dw_set_ios(struct mmc *mmc)
 
 int dw_mmc_init(struct mmc *mmc) {
 
-
+	struct dwmmc *host = (struct dwmmc *)mmc->priv;
 
     printf("[MMC] Hardware Configuration Register 0x%X\n",readl(host, DWMCI_HCON)); 
 
@@ -496,13 +495,16 @@ int dw_mmc_init(struct mmc *mmc) {
     return 0;
 }
 
-int dw_of_plat(struct mmc *mmc)
+int dw_set_plat(struct mmc *mmc)
 {
 	struct dwmmc *host;
 	struct mmc_config *cfg;
 	u32 fifo_depth;
 	int ret;
 
+	cfg = mmc->cfg;
+
+	printf("[MMC] DW mmc struct allocated 0x%lX cfg 0x%lX\n", mmc, cfg);
 	char *dev_name = "Synopsys DW MMC";
 
     host = &dw_mmc0;
@@ -520,7 +522,6 @@ int dw_of_plat(struct mmc *mmc)
 	host->name = dev_name;
 	host->dev_index = 0;
 
-	cfg = &dw_mmc0_cfg;
 
 	cfg->name = host->name;
 
@@ -540,7 +541,7 @@ int dw_of_plat(struct mmc *mmc)
 
 	cfg->b_max = 1024;
 
-	mmc->cfg = cfg;
+	
 
 	/* Setup dsr related values */
 	mmc->dsr_imp = 0;

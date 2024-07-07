@@ -20,6 +20,7 @@ int dw_mmc_init(struct mmc *mmc);
 
 // supposted we have 1 MMC dev for now
 struct mmc mmc0;
+struct mmc_config mmc_cfg0;
 
 void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd)
 {
@@ -767,10 +768,12 @@ int mmc_init(void) {
  	bool no_card;
 	int err = 0;
 
-    err = dw_of_plat(mmc);
+    mmc->cfg = &mmc_cfg0;
 
+    
+    err = dw_set_plat(mmc);
 
-	/*
+    /*
 	 * all hosts are capable of 1 bit bus-width and able to use the legacy
 	 * timings.
 	 */
