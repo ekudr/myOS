@@ -353,7 +353,7 @@ static int mmc_startup(struct mmc *mmc)
 	}
 
 	/* Select the card, and put it into Transfer Mode */
-	if (!mmc_host_is_spi(mmc)) { /* cmd not supported in spi */
+	if (1/*!mmc_host_is_spi(mmc)*/) { /* cmd not supported in spi */
 		cmd.cmdidx = MMC_CMD_SELECT_CARD;
 		cmd.resp_type = MMC_RSP_R1;
 		cmd.cmdarg = mmc->rca << 16;
@@ -478,7 +478,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 		 * how to manage low voltages SD card is not yet
 		 * specified.
 		 */
-		cmd.cmdarg = mmc_host_is_spi(mmc) ? 0 :
+		cmd.cmdarg = 0/*mmc_host_is_spi(mmc)*/ ? 0 :
 			(mmc->cfg->voltages & 0xff8000);
 
 		if (mmc->version == SD_VERSION_2)
@@ -504,7 +504,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 	if (mmc->version != SD_VERSION_2)
 		mmc->version = SD_VERSION_1_0;
 
-	if (mmc_host_is_spi(mmc)) { /* read OCR for spi */
+	if (0/*mmc_host_is_spi(mmc)*/) { /* read OCR for spi */
 		cmd.cmdidx = MMC_CMD_SPI_READ_OCR;
 		cmd.resp_type = MMC_RSP_R3;
 		cmd.cmdarg = 0;
@@ -563,7 +563,7 @@ static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 	cmd.cmdidx = MMC_CMD_SEND_OP_COND;
 	cmd.resp_type = MMC_RSP_R3;
 	cmd.cmdarg = 0;
-	if (use_arg && !mmc_host_is_spi(mmc))
+	if (use_arg /*&& !mmc_host_is_spi(mmc)*/)
 		cmd.cmdarg = OCR_HCS |
 			(mmc->cfg->voltages &
 			(mmc->ocr & OCR_VOLTAGE_MASK)) |
@@ -629,7 +629,7 @@ static int mmc_complete_op_cond(struct mmc *mmc)
 		}
 	}
 
-	if (mmc_host_is_spi(mmc)) { /* read OCR for spi */
+	if (0/*mmc_host_is_spi(mmc)*/) { /* read OCR for spi */
 		cmd.cmdidx = MMC_CMD_SPI_READ_OCR;
 		cmd.resp_type = MMC_RSP_R3;
 		cmd.cmdarg = 0;

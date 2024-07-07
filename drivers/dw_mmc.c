@@ -226,8 +226,8 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	writel(host, DWMCI_CMDARG, cmd->cmdarg);
 
-	if (data)
-		flags = dw_set_transfer_mode(host, data);
+//	if (data)
+//		flags = dw_set_transfer_mode(host, data);
 
 	if ((cmd->resp_type & MMC_RSP_136) && (cmd->resp_type & MMC_RSP_BUSY))
 		return -1;
