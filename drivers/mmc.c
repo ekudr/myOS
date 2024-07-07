@@ -767,6 +767,9 @@ int mmc_init(void) {
  	bool no_card;
 	int err = 0;
 
+    err = dw_of_plat(mmc);
+
+
 	/*
 	 * all hosts are capable of 1 bit bus-width and able to use the legacy
 	 * timings.

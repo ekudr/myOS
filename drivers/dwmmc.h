@@ -137,10 +137,16 @@
 
 typedef struct dwmmc
 {
+	const char *name;
     void *ioaddr;
+	unsigned int quirks;
+	unsigned int caps;
     unsigned int clock;
 	unsigned int bus_hz;
 	unsigned int div;
+	int dev_index;
+	int dev_id;
+	int buswidth;
     u32 fifoth_val;
     	/* use fifo mode to read and write data */
 	int fifo_mode;

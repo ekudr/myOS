@@ -9,6 +9,8 @@
 dw_mmc *host;
 
 dw_mmc dw_mmc0;
+struct mmc_config dw_mmc0_cfg;
+
 
 static inline void writel(dw_mmc *host, int reg, u32 val){
     putreg32(val, (uint64_t)host->ioaddr+reg);
@@ -451,13 +453,7 @@ int dw_set_ios(struct mmc *mmc)
 
 int dw_mmc_init(struct mmc *mmc) {
 
-    host = &dw_mmc0;
-    host->ioaddr = (void*)JH7110_SDIO1_BASE;
-    host->bus_hz = 50000000;
-    host->fifo_mode = 1;
 
-	host->mmc = mmc;
-	mmc->priv = host;
 
     printf("[MMC] Hardware Configuration Register 0x%X\n",readl(host, DWMCI_HCON)); 
 
@@ -498,4 +494,64 @@ int dw_mmc_init(struct mmc *mmc) {
 		writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
 
     return 0;
+}
+
+int dw_of_plat(struct mmc *mmc)
+{
+	struct dwmmc *host;
+	struct mmc_config *cfg;
+	u32 fifo_depth;
+	int ret;
+
+	char *dev_name = "Synopsys DW MMC";
+
+    host = &dw_mmc0;
+    host->ioaddr = (void*)JH7110_SDIO1_BASE;
+    host->bus_hz = 50000000;
+
+	host->mmc = mmc;
+	mmc->priv = host;
+
+	fifo_depth = 32;
+	host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_depth / 2 - 1) | TX_WMARK(fifo_depth / 2);
+
+	host->buswidth = 4;
+
+	host->name = dev_name;
+	host->dev_index = 0;
+
+	cfg = &dw_mmc0_cfg;
+
+	cfg->name = host->name;
+
+	cfg->f_min = 400000;
+	cfg->f_max = 50000000;
+	cfg->voltages = MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_165_195;
+	cfg->host_caps = host->caps;
+
+	if (host->buswidth == 8) {
+		cfg->host_caps |= MMC_MODE_8BIT;
+		cfg->host_caps &= ~MMC_MODE_4BIT;
+	} else {
+		cfg->host_caps |= MMC_MODE_4BIT;
+		cfg->host_caps &= ~MMC_MODE_8BIT;
+	}
+	cfg->host_caps |= MMC_MODE_HS | MMC_MODE_HS_52MHz | MMC_MODE_HS200;
+
+	cfg->b_max = 1024;
+
+	mmc->cfg = cfg;
+
+	/* Setup dsr related values */
+	mmc->dsr_imp = 0;
+	mmc->dsr = 0xffffffff;
+	/* Setup the universal parts of the block interface just once */
+//	bdesc->removable = 1;
+
+	/* setup initial part type */
+//	bdesc->part_type = cfg->part_type;
+//	mmc->dev = dev;
+	mmc->user_speed_mode = MMC_MODES_END;
+
+	return 0;
 }
