@@ -3,19 +3,20 @@
 #include <sys/riscv.h>
 #include <mmc.h>
 #include <wait_bit.h>
+#include <linux/errno.h>
 
 #include "dwmmc.h"
 
-dw_mmc *host;
+dw_host_t *host;
 
-dw_mmc dw_mmc0;
+dw_host_t dw_mmc0;
 
 
-static inline void writel(dw_mmc *host, int reg, u32 val){
+static inline void writel(dw_host_t *host, int reg, uint32_t val){
     putreg32(val, (uint64_t)host->ioaddr+reg);
 }
 
-static inline u32 readl(dw_mmc *host, int reg){
+static inline uint32_t readl(dw_host_t *host, int reg){
     return getreg32((uint64_t)host->ioaddr+reg);
 }
 
@@ -33,10 +34,10 @@ static inline int __test_and_clear_bit_1(int nr, void *addr)
 	return retval;
 }
  
-static int dw_wait_reset(dw_mmc *host, u32 value)
+static int dw_wait_reset(dw_host_t *host, uint32_t value)
 {
 	unsigned long timeout = 1000;
-	u32 ctrl;
+	uint32_t ctrl;
 
 	writel(host, DWMCI_CTRL, value);
 
@@ -48,7 +49,7 @@ static int dw_wait_reset(dw_mmc *host, u32 value)
 	return 0;
 }
 
-static int dw_fifo_ready(struct dwmmc *host, u32 bit, u32 *len)
+static int dw_fifo_ready(dw_host_t *host, uint32_t bit, uint32_t *len)
 {
 	u32 timeout = 20000;
 
@@ -59,14 +60,14 @@ static int dw_fifo_ready(struct dwmmc *host, u32 bit, u32 *len)
 	}
 
 	if (!timeout) {
-		printf("%s: FIFO underflow timeout\n", __func__);
-		return -1;
+		printf("[MMC] %s: FIFO underflow timeout\n", __func__);
+		return -ETIMEDOUT;
 	}
 
 	return 0;
 }
 
-static unsigned int dw_get_timeout(struct mmc *mmc, const unsigned int size)
+static unsigned int dw_get_timeout(mmc_t *mmc, const unsigned int size)
 {
 	unsigned int timeout;
 
@@ -81,14 +82,14 @@ static unsigned int dw_get_timeout(struct mmc *mmc, const unsigned int size)
 	return timeout;
 }
 
-static int dw_data_transfer(struct dwmmc *host, struct mmc_data *data)
+static int dw_data_transfer(dw_host_t *host, struct mmc_data *data)
 {
-	struct mmc *mmc = host->mmc;
+	mmc_t *mmc = host->mmc;
 	int ret = 0;
-	u32 timeout, mask, size, i, len = 0;
-	u32 *buf = NULL;
-	unsigned long start = timer_get_count();
-	u32 fifo_depth = (((host->fifoth_val & RX_WMARK_MASK) >>
+	uint32_t timeout, mask, size, i, len = 0;
+	uint32_t *buf = NULL;
+	uint64_t start = timer_get_count();
+	uint32_t fifo_depth = (((host->fifoth_val & RX_WMARK_MASK) >>
 			    RX_WMARK_SHIFT) + 1) * 2;
 
 	size = data->blocksize * data->blocks;
@@ -105,8 +106,8 @@ static int dw_data_transfer(struct dwmmc *host, struct mmc_data *data)
 		mask = readl(host, DWMCI_RINTSTS);
 		/* Error during data transfer. */
 		if (mask & (DWMCI_DATA_ERR | DWMCI_DATA_TOUT)) {
-			printf("%s: DATA ERROR!\n", __func__);
-			ret = -1;
+			printf("[MMC] %s: DATA ERROR!\n", __func__);
+			ret = -EINVAL;
 			break;
 		}
 
@@ -162,9 +163,9 @@ static int dw_data_transfer(struct dwmmc *host, struct mmc_data *data)
 
 		/* Check for timeout. */
 		if (timer_get_count() - start > timeout) {
-			printf("%s: Timeout waiting for data!\n",
+			printf("[MMC] %s: Timeout waiting for data!\n",
 			      __func__);
-			ret = -1;
+			ret = -ETIMEDOUT;
 			break;
 		}
 	}
@@ -175,19 +176,19 @@ static int dw_data_transfer(struct dwmmc *host, struct mmc_data *data)
 }
 
 
-int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
+int dw_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 {
     int ret = 0, flags = 0, i;
-	unsigned int timeout = 500;
-	u32 retry = 100000;
-	u32 mask, ctrl;
-	u64 start = timer_get_count();
+	uint32_t timeout = 500;
+	uint32_t retry = 100000;
+	uint32_t mask, ctrl;
+	uint64_t start = timer_get_count();
 //  struct bounce_buffer bbstate;
 
 	while (readl(host, DWMCI_STATUS) & DWMCI_BUSY) {
 		if ((timer_get_count() - start) > timeout) {
-			printf("%s: Timeout on data busy\n", __func__);
-			return -1;
+			printf("[MMC] %s: Timeout on data busy\n", __func__);
+			return -ETIMEDOUT;
 		}
 	}
 
@@ -252,7 +253,7 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	flags |= (cmd->cmdidx | DWMCI_CMD_START | DWMCI_CMD_USE_HOLD_REG);
 
-	printf("Sending CMD%d\n",cmd->cmdidx);
+	printf("[MMC] Sending CMD%d\n",cmd->cmdidx);
 
 	writel(host, DWMCI_CMD, flags);
 
@@ -266,8 +267,8 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 	}
 
 	if (i == retry) {
-		printf("%s: Timeout.\n", __func__);
-		return -1;
+		printf("[MMC] %s: Timeout.\n", __func__);
+		return -ETIMEDOUT;
 	}
 
 	if (mask & DWMCI_INTMSK_RTO) {
@@ -279,15 +280,15 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 		 * below shall be debug(). eMMC cards also do not favor
 		 * CMD8, please keep that in mind.
 		 */
-		printf("%s: Response Timeout.\n", __func__);
-		return -1;
+		printf("[MMC] %s: Response Timeout.\n", __func__);
+		return -ETIMEDOUT;
 	} else if (mask & DWMCI_INTMSK_RE) {
-		printf("%s: Response Error.\n", __func__);
-		return -1;
+		printf("[MMC] %s: Response Error.\n", __func__);
+		return -EIO;
 	} else if ((cmd->resp_type & MMC_RSP_CRC) &&
 		   (mask & DWMCI_INTMSK_RCRC)) {
-		printf("%s: Response CRC Error.\n", __func__);
-		return -1;
+		printf("[MMC] %s: Response CRC Error.\n", __func__);
+		return -EIO;
 	}
 
 
@@ -314,7 +315,7 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 			ret = wait_for_bit_le32(host->ioaddr + DWMCI_IDSTS,
 						mask, true, 1000, false);
 			if (ret)
-				printf("%s: DWMCI_IDINTEN mask 0x%x timeout.\n",
+				printf("[MMC] %s: DWMCI_IDINTEN mask 0x%x timeout.\n",
 				      __func__, mask);
 			/* clear interrupts */
 			writel(host, DWMCI_IDSTS, DWMCI_IDINTEN_MASK);
@@ -331,9 +332,9 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
     return ret;
 }
 
-static int dw_setup_bus(dw_mmc *host, u32 freq)
+static int dw_setup_bus(dw_host_t *host, uint32_t freq)
 {
-	u32 div, status;
+	uint32_t div, status;
 	int timeout = 10000;
 	unsigned long sclk;
 
@@ -349,8 +350,8 @@ static int dw_setup_bus(dw_mmc *host, u32 freq)
 	else if (host->bus_hz)
 		sclk = host->bus_hz;
 	else {
-		printf("%s: Didn't get source clock value.\n", __func__);
-		return -1;
+		printf("[MMC] %s: Didn't get source clock value.\n", __func__);
+		return -EINVAL;
 	}
 
 	if (sclk == freq)
@@ -368,8 +369,8 @@ static int dw_setup_bus(dw_mmc *host, u32 freq)
 	do {
 		status = readl(host, DWMCI_CMD);
 		if (timeout-- < 0) {
-			printf("%s: Timeout!\n", __func__);
-			return -1;
+			printf("[MMC] %s: Timeout!\n", __func__);
+			return -ETIMEDOUT;
 		}
 	} while (status & DWMCI_CMD_START);
 
@@ -383,8 +384,8 @@ static int dw_setup_bus(dw_mmc *host, u32 freq)
 	do {
 		status = readl(host, DWMCI_CMD);
 		if (timeout-- < 0) {
-			printf("%s: Timeout!\n", __func__);
-			return -1;
+			printf("[MMC] %s: Timeout!\n", __func__);
+			return -ETIMEDOUT;
 		}
 	} while (status & DWMCI_CMD_START);
 
@@ -393,12 +394,12 @@ static int dw_setup_bus(dw_mmc *host, u32 freq)
 	return 0;
 }
 
-int dw_set_ios(struct mmc *mmc)
+int dw_set_ios(mmc_t *mmc)
 {
-	host = (struct dwmmc *)mmc->priv;
-	u32 ctype, regs;
+	host = (dw_host_t *)mmc->priv;
+	uint32_t ctype, regs;
 
-	printf("Buswidth = %d, clock: %d\n", mmc->bus_width, mmc->clock);
+	printf("[MMC] Buswidth = %d, clock: %d\n", mmc->bus_width, mmc->clock);
 
 	dw_setup_bus(host, mmc->clock);
 	switch (mmc->bus_width) {
@@ -452,7 +453,7 @@ int dw_set_ios(struct mmc *mmc)
 
 int dw_mmc_init(struct mmc *mmc) {
 
-	struct dwmmc *host = (struct dwmmc *)mmc->priv;
+	dw_host_t *host = (dw_host_t *)mmc->priv;
 
     printf("[MMC] Hardware Configuration Register 0x%X\n",readl(host, DWMCI_HCON)); 
 
@@ -460,7 +461,7 @@ int dw_mmc_init(struct mmc *mmc) {
 
     if (!dw_wait_reset(host, DWMCI_RESET_ALL)) {
 		printf("%s[%d] Fail-reset!!\n", __func__, __LINE__);
-		return -1;
+		return -EIO;
 	}
 
 	host->flags = 1 << DW_MMC_CARD_NEED_INIT;
@@ -495,11 +496,11 @@ int dw_mmc_init(struct mmc *mmc) {
     return 0;
 }
 
-int dw_set_plat(struct mmc *mmc)
+int dw_set_plat(mmc_t *mmc)
 {
-	struct dwmmc *host;
+	dw_host_t *host;
 	struct mmc_config *cfg;
-	u32 fifo_depth;
+	uint32_t fifo_depth;
 	int ret;
 
 	cfg = mmc->cfg;
@@ -509,6 +510,7 @@ int dw_set_plat(struct mmc *mmc)
 
     host = &dw_mmc0;
     host->ioaddr = (void*)JH7110_SDIO1_BASE;
+	// bus frequency of mmc sdio on JH7110
     host->bus_hz = 50000000;
 
 	host->mmc = mmc;

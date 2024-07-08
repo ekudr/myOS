@@ -8,7 +8,7 @@
 extern char _bss_start, _bss_end;
 extern char _pgtable_start, _pgtable_end;
 
-u64 boot_cpu_hartid;
+uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
@@ -23,6 +23,7 @@ void trap_init(void);
 void sbi_init (void);
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int sd_init(void);
+int mmc_init(void);
 
 
 /*

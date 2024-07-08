@@ -35,7 +35,8 @@ void lib_puts(char *s);
 
 void panic(char*) __attribute__((noreturn));
 
-uint64 timer_get_count(void);
+uint64_t timer_get_count(void);
+void udelay(unsigned long usec);
 void *malloc(uint64 size);
 void mfree(void *ptr);
 

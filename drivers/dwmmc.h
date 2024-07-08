@@ -135,7 +135,7 @@
 /* quirks */
 #define DWMCI_QUIRK_DISABLE_SMU		(1 << 0)
 
-typedef struct dwmmc
+typedef struct dw_host
 {
 	const char *name;
     void *ioaddr;
@@ -147,10 +147,10 @@ typedef struct dwmmc
 	int dev_index;
 	int dev_id;
 	int buswidth;
-    u32 fifoth_val;
+    uint32_t fifoth_val;
     	/* use fifo mode to read and write data */
 	int fifo_mode;
-	struct mmc *mmc;
+	mmc_t *mmc;
 	void *priv;
 
 	int (*clksel)(struct dwmmc *host);
@@ -164,7 +164,7 @@ typedef struct dwmmc
 #define DW_MMC_CARD_NO_USE_HOLD 3
 #define DW_MMC_CARD_NEEDS_POLL	4
 
-}dw_mmc;
+}dw_host_t;
  
 
 #endif	/* __DWMMC_H */

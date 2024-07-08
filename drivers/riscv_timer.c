@@ -2,15 +2,15 @@
 
 
 
-static inline uint64
+static inline uint64_t
 csr_read_time(void)
 {
-	uint64 x;
+	uint64_t x;
 	asm volatile ("csrr %0, 0xc01" : "=r" (x) :	  : "memory");
 	return x;
 }
 
-uint64 timer_get_count(void)
+uint64_t timer_get_count(void)
 {
 	return csr_read_time();
 }

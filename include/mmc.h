@@ -437,7 +437,7 @@ static inline bool mmc_is_mode_ddr(enum bus_mode mode)
 #define MMC_CLK_ENABLE		false
 #define MMC_CLK_DISABLE		true
 
-struct mmc {
+typedef struct mmc {
 	const struct mmc_config *cfg;	/* provided configuration */
 	uint32 version;
 	void *priv;
@@ -512,6 +512,13 @@ struct mmc {
 	u8 hs400_tuning;
 
 	enum bus_mode user_speed_mode; /* input speed mode from user */
-};
+} mmc_t;
+
+#ifdef CONFIG_MMC_SPI
+#define mmc_host_is_spi(mmc)	((mmc)->cfg->host_caps & MMC_MODE_SPI)
+#else
+#define mmc_host_is_spi(mmc)	0
+#endif
+
 
 #endif /* _MMC_H */

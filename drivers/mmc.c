@@ -9,6 +9,7 @@
 // based on u-boot
 
 #include <common.h>
+#include <linux/errno.h>
 #include <mmc.h>
 
 
@@ -19,50 +20,50 @@ int dw_mmc_init(struct mmc *mmc);
 
 
 // supposted we have 1 MMC dev for now
-struct mmc mmc0;
+mmc_t mmc0;
 struct mmc_config mmc_cfg0;
 
-void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd)
-{
-	printf("CMD_SEND:%d\n", cmd->cmdidx);
-	printf("\t\tARG\t\t\t 0x%08x\n", cmd->cmdarg);
+void 
+mmmc_trace_before_send(mmc_t *mmc, struct mmc_cmd *cmd) {
+	printf("[MMC] CMD_SEND:%d\n", cmd->cmdidx);
+	printf("[MMC] \t\tARG\t\t\t 0x%08x\n", cmd->cmdarg);
 }
 
-void mmmc_trace_after_send(struct mmc *mmc, struct mmc_cmd *cmd, int ret)
-{
+void 
+mmmc_trace_after_send(mmc_t *mmc, struct mmc_cmd *cmd, int ret) {
 	int i;
-	u8 *ptr;
+	uint8_t *ptr;
 
 	if (ret) {
-		printf("\t\tRET\t\t\t %d\n", ret);
+		printf("[MMC] \t\tRET\t\t\t %d\n", ret);
 	} else {
 		switch (cmd->resp_type) {
 		case MMC_RSP_NONE:
-			printf("\t\tMMC_RSP_NONE\n");
+			printf("[MMC] \t\tMMC_RSP_NONE\n");
 			break;
 		case MMC_RSP_R1:
-			printf("\t\tMMC_RSP_R1,5,6,7 \t 0x%08x \n",
+			printf("[MMC] \t\tMMC_RSP_R1,5,6,7 \t 0x%08x \n",
 				cmd->response[0]);
 			break;
 		case MMC_RSP_R1b:
-			printf("\t\tMMC_RSP_R1b\t\t 0x%08x \n",
+			printf("[MMC] \t\tMMC_RSP_R1b\t\t 0x%08x \n",
 				cmd->response[0]);
 			break;
 		case MMC_RSP_R2:
-			printf("\t\tMMC_RSP_R2\t\t 0x%08x \n",
+			printf("[MMC] \t\tMMC_RSP_R2\t\t 0x%08x \n",
 				cmd->response[0]);
-			printf("\t\t          \t\t 0x%08x \n",
+			printf("[MMC] \t\t          \t\t 0x%08x \n",
 				cmd->response[1]);
-			printf("\t\t          \t\t 0x%08x \n",
+			printf("[MMC] \t\t          \t\t 0x%08x \n",
 				cmd->response[2]);
-			printf("\t\t          \t\t 0x%08x \n",
+			printf("[MMC] \t\t          \t\t 0x%08x \n",
 				cmd->response[3]);
-			printf("\n");
-			printf("\t\t\t\t\tDUMPING DATA\n");
+			printf("[MMC] \n");
+			printf("[MMC] \t\t\t\t\tDUMPING DATA\n");
 			for (i = 0; i < 4; i++) {
 				int j;
-				printf("\t\t\t\t\t%03d - ", i*4);
-				ptr = (u8 *)&cmd->response[i];
+				printf("[MMC] \t\t\t\t\t%03d - ", i*4);
+				ptr = (uint8_t *)&cmd->response[i];
 				ptr += 3;
 				for (j = 0; j < 4; j++)
 					printf("%02x ", *ptr--);
@@ -70,26 +71,27 @@ void mmmc_trace_after_send(struct mmc *mmc, struct mmc_cmd *cmd, int ret)
 			}
 			break;
 		case MMC_RSP_R3:
-			printf("\t\tMMC_RSP_R3,4\t\t 0x%08x \n",
+			printf("[MMC] \t\tMMC_RSP_R3,4\t\t 0x%08x \n",
 				cmd->response[0]);
 			break;
 		default:
-			printf("\t\tERROR MMC rsp not supported\n");
+			printf("[MMC] \t\tERROR MMC rsp not supported\n");
 			break;
 		}
 	}
 }
 
-void mmc_trace_state(struct mmc *mmc, struct mmc_cmd *cmd)
-{
+void 
+mmc_trace_state(mmc_t *mmc, struct mmc_cmd *cmd) {
 	int status;
 
 	status = (cmd->response[0] & MMC_STATUS_CURR_STATE) >> 9;
 	printf("[MMC] CURR STATE:%d\n", status);
 }
 
-const char *mmc_mode_name(enum bus_mode mode)
-{
+const char *
+mmc_mode_name(enum bus_mode mode) {
+
 	static const char *const names[] = {
 	      [MMC_LEGACY]	= "MMC legacy",
 	      [MMC_HS]		= "MMC High Speed (26MHz)",
@@ -112,8 +114,9 @@ const char *mmc_mode_name(enum bus_mode mode)
 		return names[mode];
 }
 
-static uint32 mmc_mode2freq(struct mmc *mmc, enum bus_mode mode)
-{
+static uint32 
+mmc_mode2freq(mmc_t *mmc, enum bus_mode mode) {
+
 	static const int freqs[] = {
 	      [MMC_LEGACY]	= 25000000,
 	      [MMC_HS]		= 26000000,
@@ -138,8 +141,9 @@ static uint32 mmc_mode2freq(struct mmc *mmc, enum bus_mode mode)
 		return freqs[mode];
 }
 
-int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
-{
+int 
+mmc_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data) {
+
 	int ret;
 
 	mmmc_trace_before_send(mmc, cmd);
@@ -152,8 +156,8 @@ int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 
 
-static int mmc_select_mode(struct mmc *mmc, enum bus_mode mode)
-{
+static int 
+mmc_select_mode(mmc_t *mmc, enum bus_mode mode) {
 	mmc->selected_mode = mode;
 	mmc->tran_speed = mmc_mode2freq(mmc, mode);
 	mmc->ddr_mode = mmc_is_mode_ddr(mode);
@@ -162,8 +166,8 @@ static int mmc_select_mode(struct mmc *mmc, enum bus_mode mode)
 	return 0;
 }
 
-int mmc_set_clock(struct mmc *mmc, uint32 clock, bool disable)
-{
+int 
+mmc_set_clock(mmc_t *mmc, uint32_t clock, bool disable) {
 	if (!disable) {
 		if (clock > mmc->cfg->f_max)
 			clock = mmc->cfg->f_max;
@@ -180,14 +184,14 @@ int mmc_set_clock(struct mmc *mmc, uint32 clock, bool disable)
 	return dw_set_ios(mmc);
 }
 
-static int mmc_set_bus_width(struct mmc *mmc, uint32 width)
-{
+static int 
+mmc_set_bus_width(mmc_t *mmc, uint32_t width) {
 	mmc->bus_width = width;
-
 	return dw_set_ios(mmc);
 }
 
-static int mmc_go_idle(struct mmc *mmc)
+static int 
+mmc_go_idle(mmc_t *mmc)
 {
 	struct mmc_cmd cmd;
 	int err;
@@ -208,11 +212,11 @@ static int mmc_go_idle(struct mmc *mmc)
 	return 0;
 }
 
-static int mmc_startup(struct mmc *mmc)
-{
+static int 
+mmc_startup(mmc_t *mmc) {
 	int err, i;
-	uint32 mult, freq;
-	u64 cmult, csize;
+	uint32_t mult, freq;
+	uint64_t cmult, csize;
 	struct mmc_cmd cmd;
 //	struct blk_desc *bdesc;
 
@@ -229,9 +233,9 @@ static int mmc_startup(struct mmc *mmc)
 
 	/* Put the Card in Identify Mode */
 
-//	cmd.cmdidx = mmc_host_is_spi(mmc) ? MMC_CMD_SEND_CID :
-//		MMC_CMD_ALL_SEND_CID; /* cmd not supported in spi */
-    cmd.cmdidx = MMC_CMD_ALL_SEND_CID;
+	cmd.cmdidx = mmc_host_is_spi(mmc) ? MMC_CMD_SEND_CID :
+		MMC_CMD_ALL_SEND_CID; /* cmd not supported in spi */
+
 
 	cmd.resp_type = MMC_RSP_R2;
 	cmd.cmdarg = 0;
@@ -248,7 +252,7 @@ static int mmc_startup(struct mmc *mmc)
 	 * This also puts the cards into Standby State
 	 */
 
-	if (/*!mmc_host_is_spi(mmc)*/1) { /* cmd not supported in spi */
+	if (!mmc_host_is_spi(mmc)) { /* cmd not supported in spi */
 		cmd.cmdidx = SD_CMD_SEND_RELATIVE_ADDR;
 		cmd.cmdarg = mmc->rca << 16;
 		cmd.resp_type = MMC_RSP_R6;
@@ -354,7 +358,7 @@ static int mmc_startup(struct mmc *mmc)
 	}
 
 	/* Select the card, and put it into Transfer Mode */
-	if (1/*!mmc_host_is_spi(mmc)*/) { /* cmd not supported in spi */
+	if (!mmc_host_is_spi(mmc)) { /* cmd not supported in spi */
 		cmd.cmdidx = MMC_CMD_SELECT_CARD;
 		cmd.resp_type = MMC_RSP_R1;
 		cmd.cmdarg = mmc->rca << 16;
@@ -453,8 +457,8 @@ static int mmc_startup(struct mmc *mmc)
 }
 
 
-static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
-{
+static int 
+sd_send_op_cond(mmc_t *mmc, bool uhs_en) {
 	int timeout = 1000;
 	int err;
 	struct mmc_cmd cmd;
@@ -479,7 +483,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 		 * how to manage low voltages SD card is not yet
 		 * specified.
 		 */
-		cmd.cmdarg = 0/*mmc_host_is_spi(mmc)*/ ? 0 :
+		cmd.cmdarg = mmc_host_is_spi(mmc) ? 0 :
 			(mmc->cfg->voltages & 0xff8000);
 
 		if (mmc->version == SD_VERSION_2)
@@ -497,7 +501,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 			break;
 
 		if (timeout-- <= 0)
-			return -1;
+			return -ETIMEDOUT;
 
 		udelay(1000);
 	}
@@ -505,7 +509,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 	if (mmc->version != SD_VERSION_2)
 		mmc->version = SD_VERSION_1_0;
 
-	if (0/*mmc_host_is_spi(mmc)*/) { /* read OCR for spi */
+	if (mmc_host_is_spi(mmc)) { /* read OCR for spi */
 		cmd.cmdidx = MMC_CMD_SPI_READ_OCR;
 		cmd.resp_type = MMC_RSP_R3;
 		cmd.cmdarg = 0;
@@ -533,8 +537,8 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 	return 0;
 }
 
-static int mmc_send_if_cond(struct mmc *mmc)
-{
+static int 
+mmc_send_if_cond(mmc_t *mmc) {
 	struct mmc_cmd cmd;
 	int err;
 
@@ -556,15 +560,15 @@ static int mmc_send_if_cond(struct mmc *mmc)
 	return 0;
 }
 
-static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
-{
+static int 
+mmc_send_op_cond_iter(mmc_t *mmc, int use_arg) {
 	struct mmc_cmd cmd;
 	int err;
 
 	cmd.cmdidx = MMC_CMD_SEND_OP_COND;
 	cmd.resp_type = MMC_RSP_R3;
 	cmd.cmdarg = 0;
-	if (use_arg /*&& !mmc_host_is_spi(mmc)*/)
+	if (use_arg && !mmc_host_is_spi(mmc))
 		cmd.cmdarg = OCR_HCS |
 			(mmc->cfg->voltages &
 			(mmc->ocr & OCR_VOLTAGE_MASK)) |
@@ -577,11 +581,11 @@ static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 	return 0;
 }
 
-static int mmc_send_op_cond(struct mmc *mmc)
-{
+static int 
+mmc_send_op_cond(mmc_t *mmc) {
 	int err, i;
 	int timeout = 1000;
-	uint32 start;
+	uint64_t start;
 
 	/* Some cards seem to need this */
 	mmc_go_idle(mmc);
@@ -598,18 +602,18 @@ static int mmc_send_op_cond(struct mmc *mmc)
 			break;
 
 		if (timer_get_count() - start > timeout)
-			return -1;
+			return -ETIMEDOUT;
 		udelay(100);
 	}
 	mmc->op_cond_pending = 1;
 	return 0;
 }
 
-static int mmc_complete_op_cond(struct mmc *mmc)
-{
+static int 
+mmc_complete_op_cond(mmc_t *mmc) {
 	struct mmc_cmd cmd;
 	int timeout = 1000;
-	uint64 start;
+	uint64_t start;
 	int err;
 
 	mmc->op_cond_pending = 0;
@@ -625,12 +629,12 @@ static int mmc_complete_op_cond(struct mmc *mmc)
 			if (mmc->ocr & OCR_BUSY)
 				break;
 			if (timer_get_count()-start > timeout)
-				return -1;
+				return -ETIMEDOUT;
 			udelay(100);
 		}
 	}
 
-	if (0/*mmc_host_is_spi(mmc)*/) { /* read OCR for spi */
+	if (mmc_host_is_spi(mmc)) { /* read OCR for spi */
 		cmd.cmdidx = MMC_CMD_SPI_READ_OCR;
 		cmd.resp_type = MMC_RSP_R3;
 		cmd.cmdarg = 0;
@@ -657,8 +661,8 @@ static int mmc_complete_op_cond(struct mmc *mmc)
  * - turn on Vdd (card power supply)
  * - configure the bus width and clock to minimal values
  */
-static void mmc_set_initial_state(struct mmc *mmc)
-{
+static void 
+mmc_set_initial_state(mmc_t *mmc) {
 	int err;
 
 	/* First try to set 3.3V. If it fails set to 1.8V */
@@ -673,8 +677,8 @@ static void mmc_set_initial_state(struct mmc *mmc)
 	mmc_set_clock(mmc, 0, MMC_CLK_ENABLE);
 }
 
-static int mmc_power_cycle(struct mmc *mmc)
-{
+static int 
+mmc_power_cycle(mmc_t *mmc) {
 	int ret;
 /*
 	ret = mmc_power_off(mmc);
@@ -693,8 +697,8 @@ static int mmc_power_cycle(struct mmc *mmc)
 //	return mmc_power_on(mmc);
 }
 
-static int mmc_power_init(struct mmc *mmc)
-{
+static int 
+mmc_power_init(mmc_t *mmc) {
     // It should power_up controller
     // I have it on after U-Boot
     // skip for now
@@ -703,7 +707,8 @@ static int mmc_power_init(struct mmc *mmc)
 }
 
 
-int mmc_get_op_cond(struct mmc *mmc, bool quiet) {
+int 
+mmc_get_op_cond(mmc_t *mmc, bool quiet) {
 
     bool uhs_en = false; /*NOT FOR NOW   supports_uhs(mmc->cfg->host_caps);*/
 	int err;
@@ -746,15 +751,15 @@ retry:
 	}
 
 	/* If the command timed out, we check for an MMC card */
-	if (err == -1) {
+	if (err == -ETIMEDOUT) {
 		err = mmc_send_op_cond(mmc);
 
 		if (err) {
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
 			if (!quiet)
-				printf("Card did not respond to voltage select! : %d\n", err);
+				printf("[MMC] Card did not respond to voltage select! : %d\n", err);
 #endif
-			return -1;
+			return -EOPNOTSUPP;
 		}
 	}
 
@@ -763,9 +768,9 @@ retry:
 
 
 int mmc_init(void) {
-    struct mmc *mmc = &mmc0;
+    mmc_t *mmc = &mmc0;
 
- 	bool no_card;
+// 	bool no_card;
 	int err = 0;
 
     mmc->cfg = &mmc_cfg0;
