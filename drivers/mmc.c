@@ -155,6 +155,48 @@ mmc_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data) {
 }
 
 
+/**
+ * mmc_send_cmd_retry() - send a command to the mmc device, retrying on error
+ *
+ * @dev:	device to receive the command
+ * @cmd:	command to send
+ * @data:	additional data to send/receive
+ * @retries:	how many times to retry; mmc_send_cmd is always called at least
+ *              once
+ * @return 0 if ok, -ve on error
+ */
+static int 
+mmc_send_cmd_retry(mmc_t *mmc, struct mmc_cmd *cmd,
+			      struct mmc_data *data, uint32_t retries) {
+	int ret;
+
+	do {
+		ret = mmc_send_cmd(mmc, cmd, data);
+	} while (ret && retries--);
+
+	return ret;
+}
+
+/**
+ * mmc_send_cmd_quirks() - send a command to the mmc device, retrying if a
+ *                         specific quirk is enabled
+ *
+ * @dev:	device to receive the command
+ * @cmd:	command to send
+ * @data:	additional data to send/receive
+ * @quirk:	retry only if this quirk is enabled
+ * @retries:	how many times to retry; mmc_send_cmd is always called at least
+ *              once
+ * @return 0 if ok, -ve on error
+ */
+static int 
+mmc_send_cmd_quirks(mmc_t *mmc, struct mmc_cmd *cmd,
+			       struct mmc_data *data, uint32_t quirk, uint32_t retries) {
+//	if (CONFIG_IS_ENABLED(MMC_QUIRKS) && mmc->quirks & quirk)
+//		return mmc_send_cmd_retry(mmc, cmd, data, retries);
+//	else
+		return mmc_send_cmd(mmc, cmd, data);
+}
 
 static int 
 mmc_select_mode(mmc_t *mmc, enum bus_mode mode) {
@@ -212,6 +254,8 @@ mmc_go_idle(mmc_t *mmc)
 	return 0;
 }
 
+
+
 static int 
 mmc_startup(mmc_t *mmc) {
 	int err, i;
@@ -239,13 +283,13 @@ mmc_startup(mmc_t *mmc) {
 
 	cmd.resp_type = MMC_RSP_R2;
 	cmd.cmdarg = 0;
-/*
+
 	err = mmc_send_cmd_quirks(mmc, &cmd, NULL, MMC_QUIRK_RETRY_SEND_CID, 4);
 	if (err)
 		return err;
 
 	sbi_memcpy(mmc->cid, cmd.response, 16);
-*/
+
 	/*
 	 * For MMC cards, set the Relative Address.
 	 * For SD cards, get the Relatvie Address.
@@ -377,11 +421,11 @@ mmc_startup(mmc_t *mmc) {
 #endif
 */ 
 	mmc->part_config = MMCPART_NOAVAILABLE;
-/*
-	err = mmc_startup_v4(mmc);
-	if (err)
-		return err;
- */       
+
+//	err = mmc_startup_v4(mmc);
+//	if (err)
+//		return err;
+        
 /*
 	err = mmc_set_capacity(mmc, mmc_get_blk_desc(mmc)->hwpart);
 	if (err)

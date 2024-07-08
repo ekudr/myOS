@@ -116,7 +116,7 @@ void mm_init(void) {
   mem_start = (uintptr_t)(PGROUNDUP((uint64)STACK_TOP) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS+1);
   mem_end = (uintptr_t)(JH7110_DDR_BASE + JH7110_DDR_SIZE) ;
 
-  mem_end = 0x81000000;  // limit for debuging
+  //mem_end = 0x81000000;  // limit for debuging
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
