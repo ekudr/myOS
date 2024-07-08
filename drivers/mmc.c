@@ -199,6 +199,47 @@ mmc_send_cmd_quirks(mmc_t *mmc, struct mmc_cmd *cmd,
 }
 
 static int 
+mmc_read_blocks(mmc_t *mmc, void *dst, uint64_t start,
+			   uint64_t blkcnt) {
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+
+	if (blkcnt > 1)
+		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
+	else
+		cmd.cmdidx = MMC_CMD_READ_SINGLE_BLOCK;
+
+	if (mmc->high_capacity)
+		cmd.cmdarg = start;
+	else
+		cmd.cmdarg = start * mmc->read_bl_len;
+
+	cmd.resp_type = MMC_RSP_R1;
+
+	data.dest = dst;
+	data.blocks = blkcnt;
+	data.blocksize = mmc->read_bl_len;
+	data.flags = MMC_DATA_READ;
+
+	if (mmc_send_cmd(mmc, &cmd, &data))
+		return 0;
+
+	if (blkcnt > 1) {
+		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
+		cmd.cmdarg = 0;
+		cmd.resp_type = MMC_RSP_R1b;
+		if (mmc_send_cmd(mmc, &cmd, NULL)) {
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+			printf("mmc fail to send stop cmd\n");
+#endif
+			return 0;
+		}
+	}
+
+	return blkcnt;
+}
+
+static int 
 mmc_select_mode(mmc_t *mmc, enum bus_mode mode) {
 	mmc->selected_mode = mode;
 	mmc->tran_speed = mmc_mode2freq(mmc, mode);
@@ -814,6 +855,7 @@ retry:
 int mmc_init(void) {
     mmc_t *mmc = &mmc0;
 
+    char *buf[512];
 // 	bool no_card;
 	int err = 0;
 
@@ -844,6 +886,18 @@ int mmc_init(void) {
 		mmc->has_init = 0;
 	else
 		mmc->has_init = 1;
+
+    err = mmc_read_blocks(mmc, buf, 1,1);
+
+    printf("[SD_CARD] COPY read return %d\n", err);
+ 
+
+
+for(int i=0; i<512/8; i++){
+  printf("GPT: %d => 0x%X\n", i, buf[i]);
+}
+
+
 
 	return err;
 }
