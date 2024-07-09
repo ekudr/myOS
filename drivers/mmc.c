@@ -12,6 +12,14 @@
 #include <linux/errno.h>
 #include <mmc.h>
 
+#define __swab32(x) \
+	((__u32)( \
+		(((__u32)(x) & (__u32)0x000000ffUL) << 24) | \
+		(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) | \
+		(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) | \
+		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
+
+#define __be32_to_cpu(x) __swab32((__u32)(x))
 
 int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data);
 int dw_set_ios(struct mmc *mmc);
@@ -198,6 +206,346 @@ mmc_send_cmd_quirks(mmc_t *mmc, struct mmc_cmd *cmd,
 		return mmc_send_cmd(mmc, cmd, data);
 }
 
+
+
+static int sd_switch(mmc_t *mmc, int mode, int group, uint8_t value, uint8_t *resp)
+{
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+
+	/* Switch the frequency */
+	cmd.cmdidx = SD_CMD_SWITCH_FUNC;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = (mode << 31) | 0xffffff;
+	cmd.cmdarg &= ~(0xf << (group * 4));
+	cmd.cmdarg |= value << (group * 4);
+
+	data.dest = (char *)resp;
+	data.blocksize = 64;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+
+	return mmc_send_cmd(mmc, &cmd, &data);
+}
+
+static int sd_get_capabilities(mmc_t *mmc)
+{
+	int err;
+	struct mmc_cmd cmd;
+    //rewrite allocation
+    char __scr[16] _ALIGN(32); // __be32[2]
+    _ALIGN(32) uint32_t *scr =  (uint32_t*)__scr; 
+	char __switch_status[128] _ALIGN(32);   // __be32[16]
+    _ALIGN(32) uint32_t *switch_status = (uint32_t*)__switch_status;
+	struct mmc_data data;
+	int timeout;
+/*    
+#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+	u32 sd3_bus_mode;
+#endif
+*/
+	mmc->card_caps = MMC_MODE_1BIT | MMC_CAP(MMC_LEGACY);
+
+	if (mmc_host_is_spi(mmc))
+		return 0;
+
+	/* Read the SCR to find out if this card supports higher speeds */
+	cmd.cmdidx = MMC_CMD_APP_CMD;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = mmc->rca << 16;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+
+	if (err)
+		return err;
+
+	cmd.cmdidx = SD_CMD_APP_SEND_SCR;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = 0;
+
+	data.dest = (char *)scr;
+	data.blocksize = 8;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+
+	err = mmc_send_cmd_retry(mmc, &cmd, &data, 3);
+
+	if (err)
+		return err;
+
+	mmc->scr[0] = __be32_to_cpu(scr[0]);
+	mmc->scr[1] = __be32_to_cpu(scr[1]);
+
+	switch ((mmc->scr[0] >> 24) & 0xf) {
+	case 0:
+		mmc->version = SD_VERSION_1_0;
+		break;
+	case 1:
+		mmc->version = SD_VERSION_1_10;
+		break;
+	case 2:
+		mmc->version = SD_VERSION_2;
+		if ((mmc->scr[0] >> 15) & 0x1)
+			mmc->version = SD_VERSION_3;
+		break;
+	default:
+		mmc->version = SD_VERSION_1_0;
+		break;
+	}
+
+	if (mmc->scr[0] & SD_DATA_4BIT)
+		mmc->card_caps |= MMC_MODE_4BIT;
+
+	/* Version 1.0 doesn't support switching */
+	if (mmc->version == SD_VERSION_1_0)
+		return 0;
+
+	timeout = 4;
+	while (timeout--) {
+		err = sd_switch(mmc, SD_SWITCH_CHECK, 0, 1,
+				(uint8_t *)switch_status);
+
+		if (err)
+			return err;
+
+		/* The high-speed function is busy.  Try again */
+		if (!(__be32_to_cpu(switch_status[7]) & SD_HIGHSPEED_BUSY))
+			break;
+	}
+
+	/* If high-speed isn't supported, we return */
+	if (__be32_to_cpu(switch_status[3]) & SD_HIGHSPEED_SUPPORTED)
+		mmc->card_caps |= MMC_CAP(SD_HS);
+/*
+#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+	// Version before 3.0 don't support UHS modes 
+	if (mmc->version < SD_VERSION_3)
+		return 0;
+
+	sd3_bus_mode = __be32_to_cpu(switch_status[3]) >> 16 & 0x1f;
+	if (sd3_bus_mode & SD_MODE_UHS_SDR104)
+		mmc->card_caps |= MMC_CAP(UHS_SDR104);
+	if (sd3_bus_mode & SD_MODE_UHS_SDR50)
+		mmc->card_caps |= MMC_CAP(UHS_SDR50);
+	if (sd3_bus_mode & SD_MODE_UHS_SDR25)
+		mmc->card_caps |= MMC_CAP(UHS_SDR25);
+	if (sd3_bus_mode & SD_MODE_UHS_SDR12)
+		mmc->card_caps |= MMC_CAP(UHS_SDR12);
+	if (sd3_bus_mode & SD_MODE_UHS_DDR50)
+		mmc->card_caps |= MMC_CAP(UHS_DDR50);
+#endif
+*/
+	return 0;
+}
+
+static int 
+sd_set_card_speed(mmc_t *mmc, enum bus_mode mode) {
+	int err;
+
+	char __switch_status[128] _ALIGN(32);   // __be32[16]
+    _ALIGN(32) uint32_t *switch_status = (uint32_t*)__switch_status;
+
+	int speed;
+
+	/* SD version 1.00 and 1.01 does not support CMD 6 */
+	if (mmc->version == SD_VERSION_1_0)
+		return 0;
+
+	switch (mode) {
+	case MMC_LEGACY:
+		speed = UHS_SDR12_BUS_SPEED;
+		break;
+	case SD_HS:
+		speed = HIGH_SPEED_BUS_SPEED;
+		break;
+/*       
+#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+	case UHS_SDR12:
+		speed = UHS_SDR12_BUS_SPEED;
+		break;
+	case UHS_SDR25:
+		speed = UHS_SDR25_BUS_SPEED;
+		break;
+	case UHS_SDR50:
+		speed = UHS_SDR50_BUS_SPEED;
+		break;
+	case UHS_DDR50:
+		speed = UHS_DDR50_BUS_SPEED;
+		break;
+	case UHS_SDR104:
+		speed = UHS_SDR104_BUS_SPEED;
+		break;
+#endif
+*/ 
+	default:
+		return -EINVAL;
+	}
+
+	err = sd_switch(mmc, SD_SWITCH_SWITCH, 0, speed, (uint8_t *)switch_status);
+	if (err)
+		return err;
+
+	if (((__be32_to_cpu(switch_status[4]) >> 24) & 0xF) != speed)
+		return -ENOTSUPP;
+
+	return 0;
+}
+
+static int 
+sd_select_bus_width(mmc_t *mmc, int w) {
+	int err;
+	struct mmc_cmd cmd;
+
+	if ((w != 4) && (w != 1))
+		return -EINVAL;
+
+	cmd.cmdidx = MMC_CMD_APP_CMD;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = mmc->rca << 16;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	cmd.cmdidx = SD_CMD_APP_SET_BUS_WIDTH;
+	cmd.resp_type = MMC_RSP_R1;
+	if (w == 4)
+		cmd.cmdarg = 2;
+	else if (w == 1)
+		cmd.cmdarg = 0;
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+/*
+#if CONFIG_IS_ENABLED(MMC_WRITE)
+static int sd_read_ssr(struct mmc *mmc)
+{
+	static const unsigned int sd_au_size[] = {
+		0,		SZ_16K / 512,		SZ_32K / 512,
+		SZ_64K / 512,	SZ_128K / 512,		SZ_256K / 512,
+		SZ_512K / 512,	SZ_1M / 512,		SZ_2M / 512,
+		SZ_4M / 512,	SZ_8M / 512,		(SZ_8M + SZ_4M) / 512,
+		SZ_16M / 512,	(SZ_16M + SZ_8M) / 512,	SZ_32M / 512,
+		SZ_64M / 512,
+	};
+	int err, i;
+	struct mmc_cmd cmd;
+	ALLOC_CACHE_ALIGN_BUFFER(uint, ssr, 16);
+	struct mmc_data data;
+	unsigned int au, eo, et, es;
+
+	cmd.cmdidx = MMC_CMD_APP_CMD;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = mmc->rca << 16;
+
+	err = mmc_send_cmd_quirks(mmc, &cmd, NULL, MMC_QUIRK_RETRY_APP_CMD, 4);
+	if (err)
+		return err;
+
+	cmd.cmdidx = SD_CMD_APP_SD_STATUS;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = 0;
+
+	data.dest = (char *)ssr;
+	data.blocksize = 64;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+
+	err = mmc_send_cmd_retry(mmc, &cmd, &data, 3);
+	if (err)
+		return err;
+
+	for (i = 0; i < 16; i++)
+		ssr[i] = be32_to_cpu(ssr[i]);
+
+	au = (ssr[2] >> 12) & 0xF;
+	if ((au <= 9) || (mmc->version == SD_VERSION_3)) {
+		mmc->ssr.au = sd_au_size[au];
+		es = (ssr[3] >> 24) & 0xFF;
+		es |= (ssr[2] & 0xFF) << 8;
+		et = (ssr[3] >> 18) & 0x3F;
+		if (es && et) {
+			eo = (ssr[3] >> 16) & 0x3;
+			mmc->ssr.erase_timeout = (et * 1000) / es;
+			mmc->ssr.erase_offset = eo * 1000;
+		}
+	} else {
+		pr_debug("Invalid Allocation Unit Size.\n");
+	}
+
+	return 0;
+}
+*/
+/*
+ * helper function to display the capabilities in a human
+ * friendly manner. The capabilities include bus width and
+ * supported modes.
+ */
+void mmc_dump_capabilities(const char *text, uint32_t caps)
+{
+	enum bus_mode mode;
+
+	printf("%s: widths [", text);
+	if (caps & MMC_MODE_8BIT)
+		printf("8, ");
+	if (caps & MMC_MODE_4BIT)
+		printf("4, ");
+	if (caps & MMC_MODE_1BIT)
+		printf("1, ");
+	printf("\b\b] modes [");
+	for (mode = MMC_LEGACY; mode < MMC_MODES_END; mode++)
+		if (MMC_CAP(mode) & caps)
+			printf("%s, ", mmc_mode_name(mode));
+	printf("\b\b]\n");
+}
+
+/* frequency bases */
+/* divided by 10 to be nice to platforms without floating point */
+static const int fbase[] = {
+	10000,
+	100000,
+	1000000,
+	10000000,
+};
+
+/* Multiplier values for TRAN_SPEED.  Multiplied by 10 to be nice
+ * to platforms without floating point.
+ */
+static const uint8_t multipliers[] = {
+	0,	/* reserved */
+	10,
+	12,
+	13,
+	15,
+	20,
+	25,
+	30,
+	35,
+	40,
+	45,
+	50,
+	55,
+	60,
+	70,
+	80,
+};
+
+static inline int bus_width(uint32_t cap)
+{
+	if (cap == MMC_MODE_8BIT)
+		return 8;
+	if (cap == MMC_MODE_4BIT)
+		return 4;
+	if (cap == MMC_MODE_1BIT)
+		return 1;
+	printf("[MMC] invalid bus witdh capability 0x%x\n", cap);
+	return 0;
+}
+
 static int 
 mmc_read_blocks(mmc_t *mmc, void *dst, uint64_t start,
 			   uint64_t blkcnt) {
@@ -239,6 +587,7 @@ mmc_read_blocks(mmc_t *mmc, void *dst, uint64_t start,
 	return blkcnt;
 }
 
+
 static int 
 mmc_select_mode(mmc_t *mmc, enum bus_mode mode) {
 	mmc->selected_mode = mode;
@@ -272,6 +621,164 @@ mmc_set_bus_width(mmc_t *mmc, uint32_t width) {
 	mmc->bus_width = width;
 	return dw_set_ios(mmc);
 }
+
+struct mode_width_tuning {
+	enum bus_mode mode;
+	uint32_t widths;
+#ifdef MMC_SUPPORTS_TUNING
+	uint tuning;
+#endif
+};
+
+static const struct mode_width_tuning sd_modes_by_pref[] = {
+/*   
+#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+#ifdef MMC_SUPPORTS_TUNING
+	{
+		.mode = UHS_SDR104,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+		.tuning = MMC_CMD_SEND_TUNING_BLOCK
+	},
+#endif
+	{
+		.mode = UHS_SDR50,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	},
+	{
+		.mode = UHS_DDR50,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	},
+	{
+		.mode = UHS_SDR25,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	},
+#endif
+*/ 
+	{
+		.mode = SD_HS,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	},
+/*
+#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+	{
+		.mode = UHS_SDR12,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	},
+#endif
+*/
+	{
+		.mode = MMC_LEGACY,
+		.widths = MMC_MODE_4BIT | MMC_MODE_1BIT,
+	}
+};
+
+
+#define for_each_sd_mode_by_pref(caps, mwt)     \
+	for (mwt = sd_modes_by_pref;        \
+	     mwt < sd_modes_by_pref + ARRAY_SIZE(sd_modes_by_pref);     \
+	     mwt++)         \
+		if (caps & MMC_CAP(mwt->mode))
+
+
+
+static int 
+sd_select_mode_and_width(mmc_t *mmc, uint32_t card_caps) {
+	int err;
+	uint32_t widths[] = {MMC_MODE_4BIT, MMC_MODE_1BIT};
+	const struct mode_width_tuning *mwt;
+   
+//#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
+//	bool uhs_en = (mmc->ocr & OCR_S18R) ? true : false;
+//#else
+	bool uhs_en = false;
+//#endif
+	uint32_t caps;
+
+//#ifdef DEBUG
+	mmc_dump_capabilities("sd card", card_caps);
+	mmc_dump_capabilities("host", mmc->host_caps);
+//#endif
+
+	if (mmc_host_is_spi(mmc)) {
+		mmc_set_bus_width(mmc, 1);
+		mmc_select_mode(mmc, MMC_LEGACY);
+		mmc_set_clock(mmc, mmc->tran_speed, MMC_CLK_ENABLE);
+/*        
+#if CONFIG_IS_ENABLED(MMC_WRITE)
+		err = sd_read_ssr(mmc);
+		if (err)
+			pr_warn("unable to read ssr\n");
+#endif
+*/
+		return 0;
+	}
+
+	/* Restrict card's capabilities by what the host can do */
+	caps = card_caps & mmc->host_caps;
+
+//	if (!uhs_en)
+//		caps &= ~UHS_CAPS;
+
+	for_each_sd_mode_by_pref(caps, mwt) {
+		uint32_t *w;
+
+		for (w = widths; w < widths + ARRAY_SIZE(widths); w++) {
+			if (*w & caps & mwt->widths) {
+				printf("[MMC] trying mode %s width %d (at %d MHz)\n",
+					 mmc_mode_name(mwt->mode),
+					 bus_width(*w),
+					 mmc_mode2freq(mmc, mwt->mode) / 1000000);
+
+				/* configure the bus width (card + host) */
+				err = sd_select_bus_width(mmc, bus_width(*w));
+				if (err)
+					goto error;
+				mmc_set_bus_width(mmc, bus_width(*w));
+
+				/* configure the bus mode (card) */
+				err = sd_set_card_speed(mmc, mwt->mode);
+				if (err)
+					goto error;
+
+				/* configure the bus mode (host) */
+				mmc_select_mode(mmc, mwt->mode);
+				mmc_set_clock(mmc, mmc->tran_speed,
+						MMC_CLK_ENABLE);
+
+#ifdef MMC_SUPPORTS_TUNING
+				/* execute tuning if needed */
+				if (mwt->tuning && !mmc_host_is_spi(mmc)) {
+					err = mmc_execute_tuning(mmc,
+								 mwt->tuning);
+					if (err) {
+						pr_debug("tuning failed\n");
+						goto error;
+					}
+				}
+#endif
+/*
+#if CONFIG_IS_ENABLED(MMC_WRITE)
+				err = sd_read_ssr(mmc);
+				if (err)
+					pr_warn("unable to read ssr\n");
+#endif
+*/
+				if (!err)
+					return 0;
+
+error:
+				/* revert to a safer bus speed */
+				mmc_select_mode(mmc, MMC_LEGACY);
+				mmc_set_clock(mmc, mmc->tran_speed,
+						MMC_CLK_ENABLE);
+			}
+		}
+	}
+
+	printf("[MMC] unable to select a mode\n");
+	return -ENOTSUPP;
+}
+
 
 static int 
 mmc_go_idle(mmc_t *mmc)
@@ -391,11 +898,13 @@ mmc_startup(mmc_t *mmc) {
 		}
 	}
 
-	/* divide frequency by 10, since the mults are 10x bigger */
-//	freq = fbase[(cmd.response[0] & 0x7)];
-//	mult = multipliers[((cmd.response[0] >> 3) & 0xf)];
+//    printf("[MMC] mmc version %X\n", mmc->version);
 
-//	mmc->legacy_speed = freq * mult;
+	/* divide frequency by 10, since the mults are 10x bigger */
+	freq = fbase[(cmd.response[0] & 0x7)];
+	mult = multipliers[((cmd.response[0] >> 3) & 0xf)];
+
+	mmc->legacy_speed = freq * mult;
 	mmc_select_mode(mmc, MMC_LEGACY);
 
 	mmc->dsr_imp = ((cmd.response[1] >> 12) & 0x1);
@@ -472,7 +981,7 @@ mmc_startup(mmc_t *mmc) {
 	if (err)
 		return err;
 */
-#if 1 //CONFIG_IS_ENABLED(MMC_TINY)
+#if 0 //CONFIG_IS_ENABLED(MMC_TINY)
 	mmc_set_clock(mmc, mmc->legacy_speed, false);
 	mmc_select_mode(mmc, MMC_LEGACY);
 	mmc_set_bus_width(mmc, 1);
@@ -482,12 +991,12 @@ mmc_startup(mmc_t *mmc) {
 		if (err)
 			return err;
 		err = sd_select_mode_and_width(mmc, mmc->card_caps);
-	} else {
+	}/* else {
 		err = mmc_get_capabilities(mmc);
 		if (err)
 			return err;
 		err = mmc_select_mode_and_width(mmc, mmc->card_caps);
-	}
+	}*/
 #endif
 	if (err)
 		return err;
@@ -638,7 +1147,7 @@ mmc_send_if_cond(mmc_t *mmc) {
 		return err;
 
 	if ((cmd.response[0] & 0xff) != 0xaa)
-		return -1;
+		return -EOPNOTSUPP;
 	else
 		mmc->version = SD_VERSION_2;
 
@@ -856,7 +1365,7 @@ int mmc_init(void) {
     mmc_t *mmc = &mmc0;
 
     char *buf[512];
-// 	bool no_card;
+ 	bool no_card;
 	int err = 0;
 
     mmc->cfg = &mmc_cfg0;
@@ -870,6 +1379,17 @@ int mmc_init(void) {
 	 */
 	mmc->host_caps = mmc->cfg->host_caps | MMC_CAP(MMC_LEGACY) |
 			 MMC_MODE_1BIT;   
+
+
+    no_card = dw_getcd(mmc);
+    if (no_card) {
+		mmc->has_init = 0;
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+		printf("[MMC] no card present\n");
+#endif
+		return -ENOMEDIUM;
+	}
+
 
     err = mmc_get_op_cond(mmc, false);
 

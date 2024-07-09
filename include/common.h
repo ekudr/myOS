@@ -26,6 +26,7 @@ typedef enum { false, true } bool;
 	(void) (&_min1 == &_min2);		\
 	_min1 < _min2 ? _min1 : _min2; })
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 
 void _putchar(char character);

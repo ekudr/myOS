@@ -451,7 +451,13 @@ int dw_set_ios(mmc_t *mmc)
 	return 0;
 }
 
-int dw_mmc_init(struct mmc *mmc) {
+int dw_getcd(mmc_t *mmc) {
+	dw_host_t *host = (dw_host_t *)mmc->priv;
+	return !(readl(host, DWMCI_CDETECT) & 1);
+}
+
+
+int dw_mmc_init(mmc_t *mmc) {
 
 	dw_host_t *host = (dw_host_t *)mmc->priv;
 
@@ -518,7 +524,7 @@ int dw_set_plat(mmc_t *mmc)
 
 	fifo_depth = 32;
 	host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_depth / 2 - 1) | TX_WMARK(fifo_depth / 2);
-
+	host->fifo_mode = 1;
 	host->buswidth = 4;
 
 	host->name = dev_name;

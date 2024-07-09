@@ -45,3 +45,17 @@ image = custom_target('image',
     depends: boot_elf,
     build_by_default: true
 )
+
+summary(
+  {
+    'Built type': get_option('buildtype'),
+  },
+  section: 'Build settings'
+)
+
+summary(
+  {
+    'Board': get_option('board'),
+  },
+  section: 'Platform'
+)
