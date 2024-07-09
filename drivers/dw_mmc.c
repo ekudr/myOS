@@ -175,6 +175,16 @@ static int dw_data_transfer(dw_host_t *host, struct mmc_data *data)
 	return ret;
 }
 
+static int 
+dw_set_transfer_mode(dw_host_t *host, struct mmc_data *data) {
+	unsigned long mode;
+
+	mode = DWMCI_CMD_DATA_EXP;
+	if (data->flags & MMC_DATA_WRITE)
+		mode |= DWMCI_CMD_RW;
+
+	return mode;
+}
 
 int dw_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 {
@@ -228,8 +238,8 @@ int dw_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	writel(host, DWMCI_CMDARG, cmd->cmdarg);
 
-//	if (data)
-//		flags = dw_set_transfer_mode(host, data);
+	if (data)
+		flags = dw_set_transfer_mode(host, data);
 
 	if ((cmd->resp_type & MMC_RSP_136) && (cmd->resp_type & MMC_RSP_BUSY))
 		return -1;

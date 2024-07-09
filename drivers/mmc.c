@@ -990,6 +990,7 @@ mmc_startup(mmc_t *mmc) {
 		err = sd_get_capabilities(mmc);
 		if (err)
 			return err;
+
 		err = sd_select_mode_and_width(mmc, mmc->card_caps);
 	}/* else {
 		err = mmc_get_capabilities(mmc);
@@ -1381,7 +1382,7 @@ int mmc_init(void) {
 			 MMC_MODE_1BIT;   
 
 
-    no_card = dw_getcd(mmc);
+    no_card = 0;  // dw_getcd(mmc);
     if (no_card) {
 		mmc->has_init = 0;
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
