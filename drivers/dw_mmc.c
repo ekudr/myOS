@@ -76,9 +76,13 @@ static unsigned int dw_get_timeout(mmc_t *mmc, const unsigned int size)
 	timeout /= mmc->clock;
 	timeout /= mmc->bus_width;
 	timeout /= mmc->ddr_mode ? 2 : 1;
-	timeout *= 100000;	/* counting in msec, I added 2 zeros )))  */
+	timeout *= 1000;	/* counting in msec  */
 	timeout = (timeout < 1000) ? 1000 : timeout;
 
+	// my counter in ticks, NOT msec
+	// multiply timeout
+	timeout *=100;
+	
 	return timeout;
 }
 
