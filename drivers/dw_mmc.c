@@ -76,7 +76,7 @@ static unsigned int dw_get_timeout(mmc_t *mmc, const unsigned int size)
 	timeout /= mmc->clock;
 	timeout /= mmc->bus_width;
 	timeout /= mmc->ddr_mode ? 2 : 1;
-	timeout *= 1000;	/* counting in msec */
+	timeout *= 100000;	/* counting in msec, I added 2 zeros )))  */
 	timeout = (timeout < 1000) ? 1000 : timeout;
 
 	return timeout;
@@ -162,7 +162,7 @@ static int dw_data_transfer(dw_host_t *host, struct mmc_data *data)
 		}
 
 		/* Check for timeout. */
-		if (timer_get_count() - start > timeout) {
+		if ((timer_get_count() - start) > timeout) {
 			printf("[MMC] %s: Timeout waiting for data!\n",
 			      __func__);
 			ret = -ETIMEDOUT;
