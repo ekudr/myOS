@@ -1,10 +1,10 @@
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
 #define VERSION_STR "@version@"
 
-#define CONFIG_MP_NUM_CPUS      5    /* JH7110 */
+
 #define CONFIG_NUM_TASKS        64  /* maximum number of processes */ 
 #define CONFIG_NUM_FILES       16  /*open files per process*/ 
 
-#endif /* _CONFIG_H */
+#endif /* __CONFIG_H__ */

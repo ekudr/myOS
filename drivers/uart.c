@@ -1,6 +1,6 @@
-#include <stdint.h>
+
+#include <common.h>
 #include <spinlock.h>
-#include <jh7110_memmap.h>
 #include <sbi_ecall_interface.h>
 #include <sched.h>
 
@@ -46,12 +46,7 @@ uint64_t uart_inited;
 
 void uart_start();
 
-
-
-void sbi_console_putc(char ch);
-
-
-void uart_init(void) {
+void ns16550_uart_init(void) {
   // disable interrupts.
   REGB(UART0, UART_IER) = 0x00;
 
@@ -80,6 +75,20 @@ void uart_init(void) {
   uart_inited = 0x55555555;
 }
 
+void sbi_console_putc(char ch);
+
+
+void uart_init(void) {
+#ifdef __SIFIVE_U__   
+    sifive_uart_init();
+    uart_inited = 0x55555555;
+#endif   
+#ifdef __JH7110__
+    ns16550_uart_init();
+    uart_inited = 0x55555555;
+#endif 
+}
+
 // alternate version of uartputc() that doesn't 
 // use interrupts, for use by kernel printf() and
 // to echo characters. it spins waiting for the uart's
@@ -100,7 +109,7 @@ void uart_putc_sync(int c) {
   pop_off();
 }
 
-void uart_putc(char ch) {
+void ns16550_uart_putc(char ch) {
 
     
   acquire(&uart_tx_lock);
@@ -160,7 +169,7 @@ void uart_start(void) {
 
 // read one input character from the UART.
 // return -1 if none is waiting.
-int uart_getc(void) {
+int ns16550_uart_getc(void) {
   if(REGB(UART0, UART_LSR) & 0x01){
     // input data is ready.
     return REGB(UART0, UART_RHR);
@@ -173,8 +182,12 @@ int uart_getc(void) {
  
 void lib_putc(char ch) {
     if (uart_inited == 0x55555555) {
-        if (ch == '\n') uart_putc('\r');
-        uart_putc(ch);
+#ifdef __SIFIVE_U__   
+    sifive_uart_putc(ch);
+#endif   
+#ifdef __JH7110__
+    ns16550_uart_putc(ch);
+#endif 
     } else {
         sbi_console_putc(ch);
     }
@@ -183,7 +196,17 @@ void lib_putc(char ch) {
 }
 
 void _putchar(char character){
-  sbi_console_putc(character);   
+  if (uart_inited == 0x55555555) {
+#ifdef __SIFIVE_U__   
+    sifive_uart_putc(character);
+#endif   
+#ifdef __JH7110__
+    ns16550_uart_putc(character);
+#endif 
+  } else {
+    sbi_console_putc(character); 
+  }
+    
 }
 
 void lib_puts(char *s) {

@@ -6,6 +6,7 @@
 #include <config.h>
 #include <printf.h>
 #include <string.h>
+#include <board.h>
 
 typedef enum { false, true } bool;
 
@@ -27,6 +28,38 @@ typedef enum { false, true } bool;
 	_min1 < _min2 ? _min1 : _min2; })
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+
+/* Kernel code memory (RX) */
+
+
+#define KSTART      (uintptr_t)_start
+#define STACK_TOP       (uintptr_t)_stack_top
+#define BSS_START     (uintptr_t)_bss_start
+#define BSS_END       (uintptr_t)_bss_end
+
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+
+/* Kernel RAM (RW) */
+
+extern uint8_t          __ksram_start[];
+extern uint8_t          __ksram_size[];
+extern uint8_t          __ksram_end[];
+
+/* Page pool (RWX) */
+
+extern uint8_t          __pgheap_start[];
+extern uint8_t          __pgheap_size[];
+
+extern uint8_t      _start[];
+extern uint8_t      _stack_top[];
+extern uint8_t      _bss_start[];
+extern uint8_t      _bss_end[];
+
 
 
 void _putchar(char character);

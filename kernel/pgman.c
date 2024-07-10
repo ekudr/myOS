@@ -1,7 +1,6 @@
 #include <common.h>
 #include <rv_mmu.h>
 #include <queue.h>
-#include <jh7110_memmap.h>
 #include <spinlock.h>
 #include <mmu.h>
 

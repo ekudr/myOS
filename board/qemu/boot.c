@@ -5,14 +5,14 @@
 #include <mmu.h> 
 #include <sched.h>
 
-extern char _bss_start, _bss_end;
-extern char _pgtable_start, _pgtable_end;
 
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
 #define FB	(u8*)0xfe000000
 #define FB_LEN	3840*2160*4
+
+int board_init(void);
 
 void plic_init(void); 
 void tasks_init(void);
@@ -24,6 +24,7 @@ void sbi_init (void);
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int sd_init(void);
 int mmc_init(void);
+void uart_init(void);
 
 
 /*
@@ -56,31 +57,10 @@ void boot_init_hart(){
 int boot_start(void)
 {
 
-    /* Prepare the bss memory region */
-//    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
+ 	sbi_init();
 
-
-    /* Crashing the screen image. test :) */
-    /*
-        int x = 0;
-    for(int i = 0; i < FB_LEN; i++) {
-	*(FB+(i*4)) = x++;
-	*(FB+(i*4)+1) = x++;
-	*(FB+(i*4)+2) = x++;
-	*(FB+(i*4)+3) = 0x00;
-    }
-    */
-       
-    for(int i = 0; i < FB_LEN; i++) {
-	*(u8*)(FB+i) = 0x00;
-    }
-
-    *(u8*)(FB+((1920*540+1000)*4)) = 0xFF;
-
-	sbi_init();
-
-//	uart_init();
-
+    board_init();
+    
     printf("\nmyOS version ");
     printf(version);
     printf("\n");
@@ -107,17 +87,12 @@ int boot_start(void)
     
     printf("Done.\n");
 
-	printf("[CONSOLE] init ... ");
-
+	printf("[CONSOLE] init ... ");   
+    sifive_uart_init();
 	printf("Done.\n");
 
     printf("[SD_CARD] init ... ");
- #ifdef _SIFIVE_U_   
     sd_init();
- #endif 
-#ifdef _JH7110_
-    mmc_init();
-#endif    
     printf("Done.\n");
 
     printf("Timer: 0x%lx\n",timer_get_count());

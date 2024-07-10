@@ -23,26 +23,27 @@ c_args = [
 
 board = get_option('board')
 
-if board.contains('vf2')
-    c_args += '-D_JH7110_'
-endif
-
-if board.contains('qemu')
-    c_args += '-D_SIFIVE_U_'
-endif
 
 subdir('include')
+
+if board.contains('vf2')
+    inc_include += include_directories('./board/vf2/include')
+endif
+if board.contains('qemu')
+    inc_include += include_directories('./board/qemu/include')
+endif
+
 subdir('lib')
 subdir('kernel')
 subdir('drivers')
-subdir('boot')
+subdir('board')
 
 
 image = custom_target('image',
-    input: boot_elf,
+    input: myos_elf,
     output: 'OSImage.bin',
     command: [objcopy, '-O', 'binary', '@INPUT@', '@OUTPUT@'],
-    depends: boot_elf,
+    depends: myos_elf,
     build_by_default: true
 )
 

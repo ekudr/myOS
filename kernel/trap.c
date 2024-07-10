@@ -4,7 +4,6 @@
 #include <sys/riscv.h>
 #include <sched.h>
 #include <trap.h>
-#include <jh7110_memmap.h>
 #include <mmu.h>
 #include <syscall.h>
 

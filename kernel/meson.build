@@ -12,6 +12,7 @@ kernel_sources = [
     'plic.c',
 #    'console.c',
     'syscall.c',
+    'sbi.c',
 ]
 
 kernel_a = static_library(

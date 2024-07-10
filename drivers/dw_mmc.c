@@ -1,5 +1,4 @@
 #include <common.h>
-#include <jh7110_memmap.h>
 #include <sys/riscv.h>
 #include <mmc.h>
 #include <wait_bit.h>
@@ -82,7 +81,7 @@ static unsigned int dw_get_timeout(mmc_t *mmc, const unsigned int size)
 	// my counter in ticks, NOT msec
 	// multiply timeout
 	timeout *=100;
-	
+
 	return timeout;
 }
 
@@ -529,7 +528,7 @@ int dw_set_plat(mmc_t *mmc)
 	char *dev_name = "Synopsys DW MMC";
 
     host = &dw_mmc0;
-    host->ioaddr = (void*)JH7110_SDIO1_BASE;
+    host->ioaddr = (void*)SDIO1_BASE;
 	// bus frequency of mmc sdio on JH7110
     host->bus_hz = 50000000;
 
