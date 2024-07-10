@@ -109,9 +109,15 @@ void uart_putc_sync(int c) {
   pop_off();
 }
 
+
 void ns16550_uart_putc(char ch) {
 
-    
+  if(ch == '\n') _ns16550_uart_putc('\t')
+  _ns16550_uart_putc(ch);
+}
+
+void _ns16550_uart_putc(char ch) {
+   
   acquire(&uart_tx_lock);
 
   while ((REGW(UART0, UART_LSR) & UART_LSR_BUF_EMPTY_MASK) == 0);
@@ -130,11 +136,6 @@ void ns16550_uart_putc(char ch) {
  */
 
   release(&uart_tx_lock);
- 
-
-
-
-
 }
 
 // if the UART is idle, and a character is waiting

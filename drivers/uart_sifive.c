@@ -39,12 +39,12 @@ uart_readl(uintreg_t base, int reg){
 
 static int 
 _sifive_uart_putc(const char c) {
-
+	
 	if (uart_readl(UART0, UART_TXDATA) & UART_TXFIFO_FULL)
 		return -EAGAIN;
 
 	uart_writel(UART0, UART_TXDATA, c);
-
+	
 	return 0;
 }
 
@@ -63,18 +63,18 @@ _sifive_uart_getc() {
 int 
 sifive_uart_getc() {
 	int c;
-
+	
 	while ((c = _sifive_uart_getc()) == -EAGAIN) ;
-
+	
 	return c;
 }
 
 int 
 sifive_uart_putc(const char ch) {
 	int rc;
-
+	acquire(&sf_uart_tx_lock);
 	while ((rc = _sifive_uart_putc(ch)) == -EAGAIN) ;
-
+	release(&sf_uart_tx_lock);
 	return rc;
 }
 
