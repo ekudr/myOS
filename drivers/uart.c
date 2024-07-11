@@ -112,7 +112,7 @@ void uart_putc_sync(int c) {
 
 void ns16550_uart_putc(char ch) {
 
-  if(ch == '\n') _ns16550_uart_putc('\t')
+  if(ch == '\n') _ns16550_uart_putc('\r');
   _ns16550_uart_putc(ch);
 }
 

@@ -25,6 +25,7 @@ int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long 
 int sd_init(void);
 int mmc_init(void);
 void uart_init(void);
+int boot_disk_init(void);
 
 
 /*
@@ -115,6 +116,8 @@ int boot_start(void)
     printf("[SD_CARD] init ... ");
     mmc_init();
     printf("Done.\n");
+
+    boot_disk_init();
 
     printf("Timer: 0x%lx\n",timer_get_count());
     printf("S mode status register 0x%lX\n",r_sstatus());

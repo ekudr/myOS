@@ -1,7 +1,7 @@
 drivers_sources = [
     'spi.c',
     'uart.c',
-#    'mmc.c',
+    'disk.c',
     'riscv_timer.c',
 #    'dw_mmc.c',
 #     'uart.c',

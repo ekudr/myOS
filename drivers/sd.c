@@ -1,6 +1,11 @@
 #include <common.h>
 #include <spi.h>
+#include <part.h>
 #include "sifiveu_spi.h"
+
+
+extern disk_t boot_disk;
+
 
 int sd_copy(spi_ctrl* spi, void* dst, uint32_t src_lba, size_t size);
 
@@ -158,14 +163,14 @@ static int sd_cmd58(spi_ctrl* spi)
   // HACK: Disabled due to bugs. It is not strictly necessary
   // to issue this command if we only support SD cards that support SDHC mode.
   return 0;
-  // int rc;
-  // rc = (sd_cmd(spi, SD_CMD(SD_CMD_READ_OCR), 0, 0xFD) != 0x00);
-  // rc |= ((sd_dummy(spi) & 0x80) != 0x80); /* Power up status */
-  // sd_dummy(spi); /* Supported voltages */
-  // sd_dummy(spi); /* Supported voltages */
-  // sd_dummy(spi); /* Supported voltages */
-  // sd_cmd_end(spi);
-  // return rc;
+//   int rc;
+//   rc = (sd_cmd(spi, SD_CMD(SD_CMD_READ_OCR), 0, 0xFD) != 0x00);
+//   rc |= ((sd_dummy(spi) & 0x80) != 0x80); /* Power up status */
+//   sd_dummy(spi); /* Supported voltages */
+//   sd_dummy(spi); /* Supported voltages */
+//   sd_dummy(spi); /* Supported voltages */
+//   sd_cmd_end(spi);
+//   return rc;
 }
 
 
@@ -202,10 +207,11 @@ static uint16_t crc16(uint16_t crc, uint8_t data)
   return crc;
 }
 
+int sd_bread(void* dst, uint32_t src_lba, size_t size) {
+  return sd_copy(spi, dst, src_lba*0x200, size);
+}
 
 int sd_init(void) {
-
-  char *buf[512];
 
     spi = (spi_ctrl*) SPI2_CTRL_ADDR;
   //  spimem = (void*) SPI0_MEM_ADDR;
@@ -224,11 +230,14 @@ int sd_init(void) {
       printf("[SD_CARD] CMD8 return %d\n", err);
       panic("SD init reset");
   }
+  
   err = sd_acmd41(spi);
   if (err) {
       printf("[SD_CARD] ACMD41 return %d\n", err);
       panic("SD init reset");  
   }
+
+
   err = sd_cmd58(spi);
   if (err) {
       printf("[SD_CARD] CMD58 return %d\n", err);
@@ -236,22 +245,21 @@ int sd_init(void) {
   }
   err = sd_cmd16(spi);  
   if (err) {
-      printf("[SD_CARD] CMD16 return %d\n", err);
+     printf("[SD_CARD] CMD16 return %d\n", err);
+      panic("SD init reset");  
+  }
+
+    err = sd_cmd16(spi);  
+  if (err) {
+     printf("[SD_CARD] CMD16 return %d\n", err);
       panic("SD init reset");  
   }
 
   spi->sckdiv = spi_min_clk_divisor(33000, SD_POST_INIT_CLK_KHZ);
 
-err =  sd_copy(spi, buf, 1, 1);
-  if (err) {
-      printf("[SD_CARD] COPY return %d\n", err);
-      panic("SD init");  
-  }
-/*
-for(int i=0; i<512/4; i++){
-  printf("GPT: %d => 0x%X\n", i, buf[i]);
-}
-*/
+
+  boot_disk.bread = sd_bread;
+
   return 0; 
 }
 
@@ -301,3 +309,4 @@ int sd_copy(spi_ctrl* spi, void* dst, uint32_t src_lba, size_t size)
   sd_cmd_end(spi);
   return rc;
 }
+

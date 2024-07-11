@@ -5,6 +5,9 @@
 #include <mmu.h> 
 #include <sched.h>
 
+#include <spi.h>
+#define ACCESS(x) (*(__typeof__(*x) volatile *)(x))
+extern spi_ctrl* spi;
 
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
@@ -25,17 +28,7 @@ int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long 
 int sd_init(void);
 int mmc_init(void);
 void uart_init(void);
-
-
-/*
-void memset(void *b, int c, int len)
-    {
-       char *s = b;
-
-        while(len--)
-            *s++ = c;
-    }
-*/
+int boot_disk_init(void);
 
 void boot_init_hart(){
 
@@ -56,6 +49,8 @@ void boot_init_hart(){
 
 int boot_start(void)
 {
+    char *buf[512];
+    int err;
 
  	sbi_init();
 
@@ -95,6 +90,18 @@ int boot_start(void)
     sd_init();
     printf("Done.\n");
 
+    boot_disk_init();
+/*
+err =  sd_copy(spi, buf, 0, 1);
+  if (err) {
+      printf("[SD_CARD] COPY return %d\n", err); 
+  }
+
+for(int i=0; i<512; i++){
+  printf("GPT: %d => 0x%X\n", i, ACCESS(buf+i));
+}
+*/
+
     printf("Timer: 0x%lx\n",timer_get_count());
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
@@ -111,7 +118,6 @@ int boot_start(void)
     printf("[USER] init ... ");
     shed_user_init();
     printf("Done.\n");
-
 
 	scheduler();
     while(1){}

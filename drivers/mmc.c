@@ -11,6 +11,7 @@
 #include <common.h>
 #include <linux/errno.h>
 #include <mmc.h>
+#include <part.h>
 
 #define __swab32(x) \
 	((__u32)( \
@@ -25,7 +26,7 @@ int dw_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data);
 int dw_set_ios(struct mmc *mmc);
 int dw_mmc_init(struct mmc *mmc);
 
-
+extern disk_t boot_disk;
 
 // supposted we have 1 MMC dev for now
 mmc_t mmc0;
@@ -1361,6 +1362,9 @@ retry:
 	return err;
 }
 
+int mmc_bread(void* dst, uint32_t src_lba, size_t size) {
+  return mmc_read_blocks(&mmc0, dst, src_lba, size);
+}
 
 int mmc_init(void) {
     mmc_t *mmc = &mmc0;
@@ -1407,7 +1411,7 @@ int mmc_init(void) {
 		mmc->has_init = 0;
 	else
 		mmc->has_init = 1;
-
+/*
     err = mmc_read_blocks(mmc, buf, 1,1);
 
     printf("[SD_CARD] COPY read return %d\n", err);
@@ -1417,8 +1421,8 @@ int mmc_init(void) {
 for(int i=0; i<512/8; i++){
   printf("GPT: %d => 0x%X\n", i, buf[i]);
 }
-
-
+*/
+	boot_disk.bread = mmc_bread;
 
 	return err;
 }
