@@ -18,6 +18,12 @@ if board.contains('vf2')
         ]
 endif
 
+if board.contains('bpi-f3')
+    drivers_sources += ['mmc.c',
+                        'dw_mmc.c',
+        ]
+endif
+
 if board.contains('qemu')
    drivers_sources += [
                         'sd.c',

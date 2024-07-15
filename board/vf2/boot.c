@@ -26,6 +26,7 @@ int sd_init(void);
 int mmc_init(void);
 void uart_init(void);
 int boot_disk_init(void);
+int kernel_init(void);
 
 
 /*
@@ -117,26 +118,7 @@ int boot_start(void)
     mmc_init();
     printf("Done.\n");
 
-    boot_disk_init();
+    kernel_init();
 
-    printf("Timer: 0x%lx\n",timer_get_count());
-    printf("S mode status register 0x%lX\n",r_sstatus());
-    printf("S mode interrupt register 0x%lX\n",r_sie());
-	__sync_synchronize();
-
-    sbi_hsm_hart_start(1, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(2, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(4, (uint64)_hart_start, 2);
-
-	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
-    printf("stack pointer: 0x%lX\n", r_sp());
-
-    printf("[USER] init ... ");
-    shed_user_init();
-    printf("Done.\n");
-
-
-	scheduler();
     while(1){}
 }

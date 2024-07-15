@@ -22,7 +22,7 @@ struct {
 // but not from write().
 //
 void
-consputc(int c)
+console_putc(int c)
 {
   if(c == BACKSPACE){
     // if the user typed backspace, overwrite with a space.

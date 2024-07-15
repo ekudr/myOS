@@ -5,15 +5,12 @@
 #include <mmu.h> 
 #include <sched.h>
 
-#include <spi.h>
-#define ACCESS(x) (*(__typeof__(*x) volatile *)(x))
-extern spi_ctrl* spi;
 
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
-#define FB	(u8*)0xfe000000
-#define FB_LEN	3840*2160*4
+#define FB	(u8*)0x7f700000
+#define FB_LEN	1920*1080*4
 
 int board_init(void);
 
@@ -30,6 +27,17 @@ int mmc_init(void);
 void uart_init(void);
 int boot_disk_init(void);
 int kernel_init(void);
+
+
+/*
+void memset(void *b, int c, int len)
+    {
+       char *s = b;
+
+        while(len--)
+            *s++ = c;
+    }
+*/
 
 void boot_init_hart(){
 
@@ -50,12 +58,31 @@ void boot_init_hart(){
 
 int boot_start(void)
 {
-    char *buf[512];
-    int err;
 
- 	sbi_init();
+    /* Prepare the bss memory region */
+//    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
 
-    board_init();
+
+    /* Crashing the screen image. test :) */
+    /*
+        int x = 0;
+    for(int i = 0; i < FB_LEN; i++) {
+	*(FB+(i*4)) = x++;
+	*(FB+(i*4)+1) = x++;
+	*(FB+(i*4)+2) = x++;
+	*(FB+(i*4)+3) = 0x00;
+    }
+    */
+ /*      
+    for(int i = 0; i < FB_LEN; i++) {
+	*(u8*)(FB+i) = 0x00;
+    }
+
+    *(u8*)FB = 0xFF;
+*/
+	sbi_init();
+
+ //   board_init();
     
     printf("\nmyOS version ");
     printf(version);
@@ -83,14 +110,15 @@ int boot_start(void)
     
     printf("Done.\n");
 
-	printf("[CONSOLE] init ... ");   
-    sifive_uart_init();
+	printf("[CONSOLE] init ... ");
+    ns16550_uart_init();
 	printf("Done.\n");
 
     printf("[SD_CARD] init ... ");
-    sd_init();
+ //  mmc_init();
     printf("Done.\n");
+
     kernel_init();
-    //no return from kernel_init
+
     while(1){}
 }

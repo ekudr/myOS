@@ -1363,7 +1363,9 @@ retry:
 }
 
 int mmc_bread(void* dst, uint32_t src_lba, size_t size) {
-  return mmc_read_blocks(&mmc0, dst, src_lba, size);
+  if(mmc_read_blocks(&mmc0, dst, src_lba, size))
+		return 0;
+  return -1;
 }
 
 int mmc_init(void) {
@@ -1372,6 +1374,8 @@ int mmc_init(void) {
     char *buf[512];
  	bool no_card;
 	int err = 0;
+
+	boot_disk.dev_inited = false;
 
     mmc->cfg = &mmc_cfg0;
 
@@ -1423,6 +1427,7 @@ for(int i=0; i<512/8; i++){
 }
 */
 	boot_disk.bread = mmc_bread;
+	boot_disk.dev_inited = true;
 
 	return err;
 }

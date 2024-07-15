@@ -10,7 +10,7 @@ kernel_sources = [
     'kernelvec.S',
     'trampoline.S',
     'plic.c',
-#    'console.c',
+    'init.c',
     'syscall.c',
     'sbi.c',
 ]

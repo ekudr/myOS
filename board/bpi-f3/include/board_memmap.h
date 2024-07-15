@@ -33,28 +33,32 @@
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
 
-#define MMU_IO_BASE     (0x00000000)
-#define MMU_IO_SIZE     (0x40000000)
+#define MMU_IO_BASE     (0x80000000)
+#define MMU_IO_SIZE     (0x80000000)
 
 /* DDR start address */
 
-#define DDR_BASE   0x40000000UL
-#define DDR_SIZE   0x200000000UL
+#define DDR_BASE   0x00000000UL
+#define DDR_SIZE   0x80000000UL
+
+#define DDR1_BASE   0x100000000UL
+#define DDR1_SIZE   0x80000000UL
 
 // qemu puts UART registers here in physical memory.
-#define UART0 0x10000000L
-#define UART0_IRQ 32        // Global IRQ + 5
+#define UART0 0xD4017000L
+#define UART0_IRQ 42        //?
 #define UART0_REG_SHIFT 2
-#define UART0_DIV 0x03
+#define UART0_DIV 0x08
+#define UART_INIT_IER 0x40
 
 
 // core local interruptor (CLINT), which contains the timer.
-#define CLINT 0x2000000L
+#define CLINT 0xE4000000L
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8) // cycles since boot.
 
 /* PLIC Base address */
-#define PLIC_BASE 0x0c000000L
+#define PLIC_BASE 0xE0000000L
 
 /* Interrupt Priority */
 #define PLIC_PRIORITY  (PLIC_BASE + 0x000000)

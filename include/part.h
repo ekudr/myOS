@@ -25,6 +25,10 @@ typedef struct {
 		(c) & 0xff, ((c) >> 8) & 0xff, \
 		(d0), (d1), (d2), (d3), (d4), (d5), (d6), (d7) } }
 
+static inline bool is_equal_guid(efi_guid_t *rguid1, efi_guid_t *rguid2)  {
+  return !sbi_memcmp(rguid1, rguid2, sizeof(efi_guid_t));
+}
+
 #define MSDOS_MBR_SIGNATURE 0xAA55
 #define MSDOS_MBR_BOOT_CODE_SIZE 440
 #define EFI_PMBR_OSTYPE_EFI 0xEF
@@ -135,7 +139,8 @@ typedef struct _legacy_mbr {
 
 typedef struct disk
 {
-    
+    bool dev_inited;
+    uint64_t fat_lba;
     int (*bread)(void* dst, uint32_t src_lba, size_t size);
 } disk_t;
 

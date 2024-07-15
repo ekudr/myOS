@@ -13,6 +13,7 @@
 #define UART_IER 1                 // interrupt enable register
 #define UART_IER_RX_ENABLE (1<<0)
 #define UART_IER_TX_ENABLE (1<<1)
+#define UART_IER_UNIT_ENABLE (1<<6)  // Unit Enable bit
 #define UART_FCR 2                 // FIFO control register
 #define UART_FCR_FIFO_ENABLE (1<<0)
 #define UART_FCR_FIFO_CLEAR (3<<1) // clear the content of the two FIFOs
@@ -27,6 +28,11 @@
 
 #define UART_LSR_BUF_EMPTY_MASK 0x20  // LSR bit 5 - Transmit Buffer Empty; the UART sent data from the THR to the OSR
 #define UART_LSR_EMPTY_MASK 0x40 // LSR bit 6 - Transmitter empty; both the THR and LSR are empty
+
+
+#ifndef UART_INIT_IER
+#define UART_INIT_IER 0x00
+#endif
 
 
 #define ACCESS(x) (*(__typeof__(*x) volatile *)(x))
@@ -47,16 +53,23 @@ uint64_t uart_inited;
 void uart_start();
 
 void ns16550_uart_init(void) {
+
+  // wait transmitter empty
+  while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
+
   // disable interrupts.
   REGB(UART0, UART_IER) = 0x00;
+
+  // and set word length to 8 bits, no parity.
+  REGB(UART0, UART_LCR) = UART_LCR_EIGHT_BITS;
 
   // special mode to set baud rate.
   REGB(UART0, UART_LCR) = UART_LCR_BAUD_LATCH;
 
-  // LSB for baud rate of 38.4K.
-  REGB(UART0, 0) = 0x03;
+  // LSB for baud rate of 115.2K.
+  REGB(UART0, 0) = UART0_DIV;
 
-  // MSB for baud rate of 38.4K.
+  // MSB for baud rate of 115.2K.
   REGB(UART0, 1) = 0x00;
 
   // leave set-baud mode,
@@ -67,7 +80,7 @@ void ns16550_uart_init(void) {
   REGB(UART0, UART_FCR) = UART_FCR_FIFO_ENABLE | UART_FCR_FIFO_CLEAR;
 
   // enable transmit and receive interrupts.
-  REGB(UART0, UART_IER) = UART_IER_TX_ENABLE | UART_IER_RX_ENABLE;
+  REGB(UART0, UART_IER) = UART_INIT_IER | UART_IER_TX_ENABLE | UART_IER_RX_ENABLE;
 
   initlock(&uart_tx_lock, "uart");
 
@@ -83,7 +96,7 @@ void uart_init(void) {
     sifive_uart_init();
     uart_inited = 0x55555555;
 #endif   
-#ifdef __JH7110__
+#if (defined(__JH7110__) || defined(__SPACEMIT_K1__))
     ns16550_uart_init();
     uart_inited = 0x55555555;
 #endif 
@@ -186,7 +199,7 @@ void lib_putc(char ch) {
 #ifdef __SIFIVE_U__   
     sifive_uart_putc(ch);
 #endif   
-#ifdef __JH7110__
+#if (defined(__JH7110__) || defined(__SPACEMIT_K1__))
     ns16550_uart_putc(ch);
 #endif 
     } else {
@@ -201,7 +214,7 @@ void _putchar(char character){
 #ifdef __SIFIVE_U__   
     sifive_uart_putc(character);
 #endif   
-#ifdef __JH7110__
+#if (defined(__JH7110__) || defined(__SPACEMIT_K1__))
     ns16550_uart_putc(character);
 #endif 
   } else {

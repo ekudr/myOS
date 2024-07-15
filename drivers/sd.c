@@ -213,6 +213,8 @@ int sd_bread(void* dst, uint32_t src_lba, size_t size) {
 
 int sd_init(void) {
 
+    boot_disk.dev_inited = false;
+
     spi = (spi_ctrl*) SPI2_CTRL_ADDR;
   //  spimem = (void*) SPI0_MEM_ADDR;
 
@@ -259,6 +261,7 @@ int sd_init(void) {
 
 
   boot_disk.bread = sd_bread;
+  boot_disk.dev_inited = true;
 
   return 0; 
 }

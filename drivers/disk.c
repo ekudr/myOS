@@ -9,6 +9,11 @@ int boot_disk_init(void){
     gpt_entry *gpt_en;
     uint64_t next_lba;
 
+    if(!boot_disk.dev_inited) {
+        panic("NO BOOT DEVICE");
+    }
+    
+
     gpt = (gpt_header *)malloc(512);
 
     err = boot_disk.bread(gpt, 1, 1); 
@@ -58,8 +63,16 @@ int boot_disk_init(void){
             }
             printf("\n");            
             printf("[DISK] GPT: partition %i lbas 0x%lX -> 0x%lX\n", i, gpt_en[i].starting_lba, gpt_en[i].ending_lba);
+
+            if(i == 2) 
+                boot_disk.fat_lba = gpt_en[i].starting_lba;
 //        }
     }
+
+    mfree(gpt_en);
+    mfree(gpt);
+
+    printf("[DISK] boot fat partition starts at 0x%X\n", boot_disk.fat_lba);
 
     return 0;
 }

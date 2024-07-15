@@ -18,6 +18,7 @@
 #define UART0 0x10010000UL
 #define UART0_IRQ 4
 #define UART0_REG_SHIFT 1
+#define UART0_DIV 0x08
 
 #define SDIO1_BASE 0x16020000UL // no in qemu
 

@@ -114,12 +114,9 @@ void sbi_init (void) {
 if (sbi_probe_extension(SBI_EXT_HSM)) {
 			
 	printf("SBI HSM extension detected\n");
-	printf("SBI HSM hart 0 status %d\n", sbi_hsm_hart_get_status(0));
-	printf("SBI HSM hart 1 status %d\n", sbi_hsm_hart_get_status(1));
-	printf("SBI HSM hart 2 status %d\n", sbi_hsm_hart_get_status(2));
-	printf("SBI HSM hart 3 status %d\n", sbi_hsm_hart_get_status(3));
-	printf("SBI HSM hart 4 status %d\n", sbi_hsm_hart_get_status(4));
-
+	for(int i=0; i<CONFIG_MP_NUM_CPUS; i++){
+		printf("SBI HSM hart %d status %d\n", i, sbi_hsm_hart_get_status(i));
+	}
 }
     
 }

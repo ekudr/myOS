@@ -33,6 +33,10 @@ if board.contains('qemu')
     inc_include += include_directories('./board/qemu/include')
 endif
 
+if board.contains('bpi-f3')
+    inc_include += include_directories('./board/bpi-f3/include')
+endif
+
 subdir('lib')
 subdir('kernel')
 subdir('drivers')
