@@ -469,13 +469,7 @@ int dw_getcd(mmc_t *mmc) {
 	return !(readl(host, DWMCI_CDETECT) & 1);
 }
 
-mmc_ops_t dw_mmc_ops = {
-	.send_cmd	= dw_send_cmd,
-	.set_ios	= dw_set_ios,
-	.init		= dw_mmc_init,
-	.getcd		= dw_getcd,
 
-};
 
 int dw_mmc_init(mmc_t *mmc) {
 
@@ -519,22 +513,35 @@ int dw_mmc_init(mmc_t *mmc) {
 	if (!host->fifo_mode)
 		writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
 
-	mmc->cfg->ops = &dw_mmc_ops;
+	
 
     return 0;
 }
 
+mmc_ops_t dw_mmc_ops = {
+	.send_cmd	= dw_send_cmd,
+	.set_ios	= dw_set_ios,
+	.init		= dw_mmc_init,
+	.getcd		= dw_getcd,
+
+};
 
 // Init host struct
 int 
 dw_mmc_init_host(mmc_t *mmc) {
     dw_host_t *host;
+	mmc_config_t *cfg;
+
+
 
     char *dev_name = "Synopsys DW MMC";
 
     host = &dw_mmc0;
     host->name = dev_name;
     mmc->priv = host;
+
+	cfg = mmc->cfg;
+	mmc->cfg->ops = &dw_mmc_ops;	
 
     return 0;
 }
