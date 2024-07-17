@@ -27,6 +27,9 @@
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8) // cycles since boot.
 
+
+#define CONFIG_SYS_TIMER_RATE 1000000;
+
 /* !!!!!!! Check alll !!!!!!!*/
 
 /* PLIC Base address */

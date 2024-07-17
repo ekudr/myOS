@@ -7,12 +7,15 @@
 void _hart_start();
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int boot_disk_init(void);
+int mmc_dev_init(void);
 
 int kernel_init(void) {
 
+    mmc_dev_init();
+    
     boot_disk_init();
 
-    printf("Timer: 0x%lx\n",timer_get_count());
+    printf("Timer: 0x%lx\n",get_timer(0));
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
 	__sync_synchronize();

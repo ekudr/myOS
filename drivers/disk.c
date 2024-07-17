@@ -1,4 +1,5 @@
 #include <common.h>
+#include <mmc.h>
 #include <part.h>
 
 disk_t boot_disk;
@@ -16,7 +17,7 @@ int boot_disk_init(void){
 
     gpt = (gpt_header *)malloc(512);
 
-    err = boot_disk.bread(gpt, 1, 1); 
+    err = boot_disk.mmc->bread(gpt, 1, 1); 
 
     if (err) {
         printf("[DISK] read GPT header return %d\n", err);
@@ -44,7 +45,7 @@ int boot_disk_init(void){
     printf("[DISK] Allocating %d bytes for gpt entries\n",gpt->sizeof_partition_entry*gpt->num_partition_entries);
     gpt_en = (gpt_entry *)malloc(gpt->sizeof_partition_entry*gpt->num_partition_entries);
     
-    err =  boot_disk.bread(gpt_en, next_lba, gpt->sizeof_partition_entry*gpt->num_partition_entries/0x200);
+    err =  boot_disk.mmc->bread(gpt_en, next_lba, gpt->sizeof_partition_entry*gpt->num_partition_entries/0x200);
     if (err) {
         printf("[DISK] read GPT entry return %d\n", err);
         return -1;  

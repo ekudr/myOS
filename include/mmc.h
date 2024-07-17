@@ -347,23 +347,23 @@ enum mmc_voltage {
 
 
 
-struct mmc_cid {
+typedef struct mmc_cid {
 	unsigned long psn;
 	unsigned short oid;
 	unsigned char mid;
 	unsigned char prv;
 	unsigned char mdt;
 	char pnm[7];
-};
+} mmc_cid_t;
 
-struct mmc_cmd {
+typedef struct mmc_cmd {
 	uint16 cmdidx;
 	uint32 resp_type;
 	uint32 cmdarg;
 	uint32 response[4];
-};
+} mmc_cmd_t;
 
-struct mmc_data {
+typedef struct mmc_data {
 	union {
 		char *dest;
 		const char *src; /* src buffers don't get written to */
@@ -371,29 +371,15 @@ struct mmc_data {
 	uint32 flags;
 	uint32 blocks;
 	uint32 blocksize;
-};
+} mmc_data_t;
 
-struct mmc_config {
-	const char *name;
-//#if !CONFIG_IS_ENABLED(DM_MMC)
-//	const struct mmc_ops *ops;
-//#endif
-	uint32 host_caps;
-	uint32 voltages;
-	uint32 f_min;
-	uint32 f_max;
-	uint32 b_max;
-	unsigned char part_type;
-//#ifdef CONFIG_MMC_PWRSEQ
-//	struct udevice *pwr_dev;
-//#endif
-};
 
-struct sd_ssr {
+
+typedef struct sd_ssr {
 	unsigned int au;		/* In sectors */
 	unsigned int erase_timeout;	/* In milliseconds */
 	unsigned int erase_offset;	/* In milliseconds */
-};
+} sd_ssr_t;
 
 enum bus_mode {
 	MMC_LEGACY,
@@ -411,6 +397,8 @@ enum bus_mode {
 	MMC_HS_400_ES,
 	MMC_MODES_END
 };
+
+
 
 static inline bool mmc_is_mode_ddr(enum bus_mode mode)
 {
@@ -485,6 +473,7 @@ typedef struct mmc {
 //	u64 enh_user_start;
 //	u64 enh_user_size;
 //#endif
+	int (*bread)(void* dst, uint32_t src_lba, size_t size);
 //#if !CONFIG_IS_ENABLED(BLK)
 //	struct blk_desc block_dev;
 //#endif
@@ -492,13 +481,7 @@ typedef struct mmc {
 	char init_in_progress;	/* 1 if we have done mmc_start_init() */
 	char preinit;		/* start init as early as possible */
 	int ddr_mode;
-//#if CONFIG_IS_ENABLED(DM_MMC)
-//	struct udevice *dev;	/* Device for this MMC controller */
-//#if CONFIG_IS_ENABLED(DM_REGULATOR)
-//	struct udevice *vmmc_supply;	/* Main voltage regulator (Vcc)*/
-//	struct udevice *vqmmc_supply;	/* IO voltage regulator (Vccq)*/
-//#endif
-//#endif
+
 	u8 *ext_csd;
 	u32 cardtype;		/* cardtype read from the MMC */
 	enum mmc_voltage current_voltage;
@@ -513,6 +496,27 @@ typedef struct mmc {
 
 	enum bus_mode user_speed_mode; /* input speed mode from user */
 } mmc_t;
+
+typedef struct mmc_ops {
+	int (*send_cmd)(mmc_t *mmc, mmc_cmd_t *cmd, mmc_data_t *data);
+	int (*set_ios)(mmc_t *mmc);
+	int (*init)(mmc_t *mmc);
+	int (*getcd)(mmc_t *mmc);
+	int (*getwp)(mmc_t *mmc);
+	int (*host_power_cycle)(mmc_t *mmc);
+	int (*get_b_max)(mmc_t *mmc, void *dst, uint64_t blkcnt);
+} mmc_ops_t;
+
+typedef struct mmc_config {
+	const char *name;
+	mmc_ops_t *ops;
+	uint32_t host_caps;
+	uint32_t voltages;
+	uint32_t f_min;
+	uint32_t f_max;
+	uint32_t b_max;
+	unsigned char part_type;
+} mmc_config_t;
 
 #ifdef CONFIG_MMC_SPI
 #define mmc_host_is_spi(mmc)	((mmc)->cfg->host_caps & MMC_MODE_SPI)

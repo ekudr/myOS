@@ -12,7 +12,13 @@ typedef enum { false, true } bool;
 
 #define locate_data(n) __attribute__((section(n)))
 #define _ALIGN(n) __attribute__ ((aligned (n)))
-
+/*
+ * Define __packed if someone hasn't beat us to it.  Linux kernel style
+ * checking prefers __packed over __attribute__((packed)).
+ */
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
 
 #define BIT(nr)			(1 << (nr))
 
@@ -28,6 +34,9 @@ typedef enum { false, true } bool;
 	_min1 < _min2 ? _min1 : _min2; })
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+
+#define debug	printf
 
 
 /* Kernel code memory (RX) */
@@ -69,7 +78,6 @@ void lib_puts(char *s);
 
 void panic(char*) __attribute__((noreturn));
 
-uint64_t timer_get_count(void);
 void udelay(unsigned long usec);
 void *malloc(uint64 size);
 void mfree(void *ptr);

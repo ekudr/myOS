@@ -38,7 +38,7 @@ static inline int wait_for_bit_##sfx(const void *reg,			\
 				     const bool breakable)		\
 {									\
 	type val;							\
-	unsigned long start = timer_get_count();				\
+	unsigned long start = get_timer(0);				\
 									\
 	while (1) {							\
 		val = read(reg);					\
@@ -49,7 +49,7 @@ static inline int wait_for_bit_##sfx(const void *reg,			\
 		if ((val & mask) == mask)				\
 			return 0;					\
 									\
-		if (timer_get_count()-start > timeout_ms)			\
+		if (get_timer(start) > timeout_ms)			\
 			break;						\
 									\
 	/*	if (breakable && ctrlc()) {				\

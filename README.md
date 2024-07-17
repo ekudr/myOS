@@ -13,7 +13,9 @@ Run from U-Boot.
 - QEMU
 
 ## Building:
+```
 meson setup build -Dboard=bpi-f3
 ninja -C build
+```
 
 ## Run

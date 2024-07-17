@@ -7,4 +7,6 @@
 
 #define CONFIG_MP_NUM_CPUS      5    /* all harts */
 
+#define CONFIG_SYS_TIMER_RATE 24000000;
+
 #endif /* __BOARD_VF2_H__ */

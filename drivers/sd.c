@@ -207,7 +207,7 @@ static uint16_t crc16(uint16_t crc, uint8_t data)
   return crc;
 }
 
-int sd_bread(void* dst, uint32_t src_lba, size_t size) {
+int sd_bread(mmc_t *mmc, void* dst, uint32_t src_lba, size_t size) {
   return sd_copy(spi, dst, src_lba*0x200, size);
 }
 
@@ -260,8 +260,8 @@ int sd_init(void) {
   spi->sckdiv = spi_min_clk_divisor(33000, SD_POST_INIT_CLK_KHZ);
 
 
-  boot_disk.bread = sd_bread;
-  boot_disk.dev_inited = true;
+//  boot_disk.bread = sd_bread;
+//  boot_disk.dev_inited = true;
 
   return 0; 
 }

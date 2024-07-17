@@ -88,7 +88,7 @@ int boot_start(void)
     printf(version);
     printf("\n");
 
-    printf("Timer: 0x%lx\n",timer_get_count());
+    printf("Timer: 0x%lx\n",get_timer(0));
 
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
     printf("TP is 0x%lX\n", r_tp());
@@ -114,9 +114,10 @@ int boot_start(void)
     ns16550_uart_init();
 	printf("Done.\n");
 
-    printf("[SD_CARD] init ... ");
-    mmc_init();
-    printf("Done.\n");
+   for (int i = 0; i < 30; i++) {
+        printf("%d ", i);
+        udelay(1000000);
+    }
 
     kernel_init();
 

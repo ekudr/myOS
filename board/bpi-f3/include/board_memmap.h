@@ -82,7 +82,7 @@
 #define PLIC_SCLAIM(hart) (PLIC_CLAIM + (hart)*0x2000)
 
 
-#define SDIO1_BASE 0x16020000UL
+#define SDIO1_BASE 0xD4280000UL
 
 
 #endif /* _JH7110_MEMMAP_H */

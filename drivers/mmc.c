@@ -28,9 +28,6 @@ int dw_mmc_init(struct mmc *mmc);
 
 extern disk_t boot_disk;
 
-// supposted we have 1 MMC dev for now
-mmc_t mmc0;
-struct mmc_config mmc_cfg0;
 
 void 
 mmmc_trace_before_send(mmc_t *mmc, struct mmc_cmd *cmd) {
@@ -156,8 +153,7 @@ mmc_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data) {
 	int ret;
 
 	mmmc_trace_before_send(mmc, cmd);
-//	ret = mmc->cfg->ops->send_cmd(mmc, cmd, data);
-    ret = dw_send_cmd(mmc, cmd, data);
+	ret = mmc->cfg->ops->send_cmd(mmc, cmd, data);
 	mmmc_trace_after_send(mmc, cmd, ret);
 
 	return ret;
@@ -588,6 +584,15 @@ mmc_read_blocks(mmc_t *mmc, void *dst, uint64_t start,
 	return blkcnt;
 }
 
+static int 
+mmc_set_ios(mmc_t *mmc) {
+	int ret = 0;
+
+	if (mmc->cfg->ops->set_ios)
+		ret = mmc->cfg->ops->set_ios(mmc);
+
+	return ret;
+}
 
 static int 
 mmc_select_mode(mmc_t *mmc, enum bus_mode mode) {
@@ -614,13 +619,13 @@ mmc_set_clock(mmc_t *mmc, uint32_t clock, bool disable) {
 
 	printf("[MMC] clock is %s (%dHz)\n", disable ? "disabled" : "enabled", clock);
 
-	return dw_set_ios(mmc);
+	return mmc_set_ios(mmc);
 }
 
 static int 
 mmc_set_bus_width(mmc_t *mmc, uint32_t width) {
 	mmc->bus_width = width;
-	return dw_set_ios(mmc);
+	return mmc_set_ios(mmc);
 }
 
 struct mode_width_tuning {
@@ -1186,7 +1191,7 @@ mmc_send_op_cond(mmc_t *mmc) {
 	/* Some cards seem to need this */
 	mmc_go_idle(mmc);
 
-	start = timer_get_count();
+	start = get_timer(0);
  	/* Asking to the card its capabilities */
 	for (i = 0; ; i++) {
 		err = mmc_send_op_cond_iter(mmc, i != 0);
@@ -1197,7 +1202,7 @@ mmc_send_op_cond(mmc_t *mmc) {
 		if (mmc->ocr & OCR_BUSY)
 			break;
 
-		if (timer_get_count() - start > timeout)
+		if (get_timer(start)  > timeout)
 			return -ETIMEDOUT;
 		udelay(100);
 	}
@@ -1217,14 +1222,14 @@ mmc_complete_op_cond(mmc_t *mmc) {
 		/* Some cards seem to need this */
 		mmc_go_idle(mmc);
 
-		start = timer_get_count();
+		start = get_timer(0);
 		while (1) {
 			err = mmc_send_op_cond_iter(mmc, 1);
 			if (err)
 				return err;
 			if (mmc->ocr & OCR_BUSY)
 				break;
-			if (timer_get_count()-start > timeout)
+			if (get_timer(start) > timeout)
 				return -ETIMEDOUT;
 			udelay(100);
 		}
@@ -1316,8 +1321,9 @@ mmc_get_op_cond(mmc_t *mmc, bool quiet) {
 	if (err)
 		return err;
 
-// call mmc_init from device driver (I have 1 only now)
-    err = dw_mmc_init(mmc);
+	if(mmc->cfg->ops->init)
+		err = mmc->cfg->ops->init(mmc);
+    
 
 	if (err)
 		return err;
@@ -1363,31 +1369,17 @@ retry:
 }
 
 int mmc_bread(void* dst, uint32_t src_lba, size_t size) {
-  if(mmc_read_blocks(&mmc0, dst, src_lba, size))
+  if(mmc_read_blocks(boot_disk.mmc, dst, src_lba, size))
 		return 0;
   return -1;
 }
 
-int mmc_init(void) {
-    mmc_t *mmc = &mmc0;
+int mmc_init(mmc_t *mmc) {
+    
 
     char *buf[512];
  	bool no_card;
 	int err = 0;
-
-	boot_disk.dev_inited = false;
-
-    mmc->cfg = &mmc_cfg0;
-
-    
-    err = dw_set_plat(mmc);
-
-    /*
-	 * all hosts are capable of 1 bit bus-width and able to use the legacy
-	 * timings.
-	 */
-	mmc->host_caps = mmc->cfg->host_caps | MMC_CAP(MMC_LEGACY) |
-			 MMC_MODE_1BIT;   
 
 
     no_card = 0;  // dw_getcd(mmc);
@@ -1415,19 +1407,8 @@ int mmc_init(void) {
 		mmc->has_init = 0;
 	else
 		mmc->has_init = 1;
-/*
-    err = mmc_read_blocks(mmc, buf, 1,1);
 
-    printf("[SD_CARD] COPY read return %d\n", err);
- 
-
-
-for(int i=0; i<512/8; i++){
-  printf("GPT: %d => 0x%X\n", i, buf[i]);
-}
-*/
-	boot_disk.bread = mmc_bread;
-	boot_disk.dev_inited = true;
+	mmc->bread = mmc_bread;
 
 	return err;
 }

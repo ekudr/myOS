@@ -80,7 +80,7 @@ static unsigned int dw_get_timeout(mmc_t *mmc, const unsigned int size)
 
 	// my counter in ticks, NOT msec
 	// multiply timeout
-	timeout *=100;
+//	timeout *=100;
 
 	return timeout;
 }
@@ -91,7 +91,7 @@ static int dw_data_transfer(dw_host_t *host, struct mmc_data *data)
 	int ret = 0;
 	uint32_t timeout, mask, size, i, len = 0;
 	uint32_t *buf = NULL;
-	uint64_t start = timer_get_count();
+	uint64_t start = get_timer(0);
 	uint32_t fifo_depth = (((host->fifoth_val & RX_WMARK_MASK) >>
 			    RX_WMARK_SHIFT) + 1) * 2;
 
@@ -165,7 +165,7 @@ static int dw_data_transfer(dw_host_t *host, struct mmc_data *data)
 		}
 
 		/* Check for timeout. */
-		if ((timer_get_count() - start) > timeout) {
+		if ((get_timer(start) ) > timeout) {
 			printf("[MMC] %s: Timeout waiting for data!\n",
 			      __func__);
 			ret = -ETIMEDOUT;
@@ -195,11 +195,11 @@ int dw_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 	uint32_t timeout = 500;
 	uint32_t retry = 100000;
 	uint32_t mask, ctrl;
-	uint64_t start = timer_get_count();
+	uint64_t start = get_timer(0);
 //  struct bounce_buffer bbstate;
 
 	while (readl(host, DWMCI_STATUS) & DWMCI_BUSY) {
-		if ((timer_get_count() - start) > timeout) {
+		if (get_timer(start) > timeout) {
 			printf("[MMC] %s: Timeout on data busy\n", __func__);
 			return -ETIMEDOUT;
 		}
@@ -515,65 +515,17 @@ int dw_mmc_init(mmc_t *mmc) {
     return 0;
 }
 
-int dw_set_plat(mmc_t *mmc)
-{
-	dw_host_t *host;
-	struct mmc_config *cfg;
-	uint32_t fifo_depth;
-	int ret;
 
-	cfg = mmc->cfg;
+// Init host struct
+int 
+dw_mmc_init_host(mmc_t *mmc) {
+    dw_host_t *host;
 
-	printf("[MMC] DW mmc struct allocated 0x%lX cfg 0x%lX\n", mmc, cfg);
-	char *dev_name = "Synopsys DW MMC";
+    char *dev_name = "Synopsys DW MMC";
 
     host = &dw_mmc0;
-    host->ioaddr = (void*)SDIO1_BASE;
-	// bus frequency of mmc sdio on JH7110
-    host->bus_hz = 50000000;
+    host->name = dev_name;
+    host->mmc->priv = host;
 
-	host->mmc = mmc;
-	mmc->priv = host;
-
-	fifo_depth = 32;
-	host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_depth / 2 - 1) | TX_WMARK(fifo_depth / 2);
-	host->fifo_mode = 1;
-	host->buswidth = 4;
-
-	host->name = dev_name;
-	host->dev_index = 0;
-
-
-	cfg->name = host->name;
-
-	cfg->f_min = 400000;
-	cfg->f_max = 50000000;
-	cfg->voltages = MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_165_195;
-	cfg->host_caps = host->caps;
-
-	if (host->buswidth == 8) {
-		cfg->host_caps |= MMC_MODE_8BIT;
-		cfg->host_caps &= ~MMC_MODE_4BIT;
-	} else {
-		cfg->host_caps |= MMC_MODE_4BIT;
-		cfg->host_caps &= ~MMC_MODE_8BIT;
-	}
-	cfg->host_caps |= MMC_MODE_HS | MMC_MODE_HS_52MHz | MMC_MODE_HS200;
-
-	cfg->b_max = 1024;
-
-	
-
-	/* Setup dsr related values */
-	mmc->dsr_imp = 0;
-	mmc->dsr = 0xffffffff;
-	/* Setup the universal parts of the block interface just once */
-//	bdesc->removable = 1;
-
-	/* setup initial part type */
-//	bdesc->part_type = cfg->part_type;
-//	mmc->dev = dev;
-	mmc->user_speed_mode = MMC_MODES_END;
-
-	return 0;
+    return 0;
 }

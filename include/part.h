@@ -2,14 +2,9 @@
 #define __PART_H__
 
 #include <common.h>
+#include <mmc.h>
 
-/*
- * Define __packed if someone hasn't beat us to it.  Linux kernel style
- * checking prefers __packed over __attribute__((packed)).
- */
-#ifndef __packed
-#define __packed __attribute__((packed))
-#endif
+
 
 #define EFI32_LOADER_SIGNATURE	"EL32"
 #define EFI64_LOADER_SIGNATURE	"EL64"
@@ -141,7 +136,7 @@ typedef struct disk
 {
     bool dev_inited;
     uint64_t fat_lba;
-    int (*bread)(void* dst, uint32_t src_lba, size_t size);
+	mmc_t	*mmc;
 } disk_t;
 
 #endif /* __PART_H__ */

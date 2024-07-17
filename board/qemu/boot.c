@@ -5,6 +5,8 @@
 #include <mmu.h> 
 #include <sched.h>
 
+#include <mmc.h>
+
 #include <spi.h>
 #define ACCESS(x) (*(__typeof__(*x) volatile *)(x))
 extern spi_ctrl* spi;
@@ -26,7 +28,7 @@ void trap_init(void);
 void sbi_init (void);
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int sd_init(void);
-int mmc_init(void);
+
 void uart_init(void);
 int boot_disk_init(void);
 int kernel_init(void);
@@ -61,7 +63,7 @@ int boot_start(void)
     printf(version);
     printf("\n");
 
-    printf("Timer: 0x%lx\n",timer_get_count());
+    printf("Timer: 0x%lx\n",get_timer(0));
 
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
     printf("TP is 0x%lX\n", r_tp());
@@ -90,7 +92,27 @@ int boot_start(void)
     printf("[SD_CARD] init ... ");
     sd_init();
     printf("Done.\n");
+
+
+    for (int i = 0; i < 30; i++) {
+        printf("%d ", i);
+        udelay(1000000);
+    }
+
+
     kernel_init();
     //no return from kernel_init
     while(1){}
+}
+
+int board_mmc_init(void) {
+    return -1;
+}
+
+int mmc_init(void) {
+    return -1;
+}
+
+int mmc_dev_init(mmc_t *mmc) {
+    return -1;
 }
