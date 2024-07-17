@@ -45,7 +45,7 @@
 #define UART0 0x10000000L
 #define UART0_IRQ 32        // Global IRQ + 5
 #define UART0_REG_SHIFT 2
-#define UART0_DIV 0x03
+#define UART0_DIV 0x0D
 
 
 // core local interruptor (CLINT), which contains the timer.
