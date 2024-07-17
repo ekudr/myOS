@@ -538,10 +538,11 @@ dw_mmc_init_host(mmc_t *mmc) {
 
     host = &dw_mmc0;
     host->name = dev_name;
+	host->mmc = mmc;
     mmc->priv = host;
 
 	cfg = mmc->cfg;
-	mmc->cfg->ops = &dw_mmc_ops;	
+	cfg->ops = &dw_mmc_ops;	
 
     return 0;
 }

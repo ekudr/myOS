@@ -114,10 +114,10 @@ int boot_start(void)
     ns16550_uart_init();
 	printf("Done.\n");
 
-   for (int i = 0; i < 30; i++) {
-        printf("%d ", i);
-        udelay(1000000);
-    }
+//   for (int i = 0; i < 30; i++) {
+//        printf("%d ", i);
+//        udelay(1000000);
+//    }
 
     kernel_init();
 
