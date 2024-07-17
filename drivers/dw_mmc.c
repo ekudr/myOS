@@ -469,10 +469,17 @@ int dw_getcd(mmc_t *mmc) {
 	return !(readl(host, DWMCI_CDETECT) & 1);
 }
 
+mmc_ops_t dw_mmc_ops = {
+	.send_cmd	= dw_send_cmd,
+	.set_ios	= dw_set_ios,
+	.init		= dw_mmc_init,
+	.getcd		= dw_getcd,
+
+};
 
 int dw_mmc_init(mmc_t *mmc) {
 
-	dw_host_t *host = (dw_host_t *)mmc->priv;
+	dw_host_t *host = mmc->priv;
 
     printf("[MMC] Hardware Configuration Register 0x%X\n",readl(host, DWMCI_HCON)); 
 
@@ -512,6 +519,8 @@ int dw_mmc_init(mmc_t *mmc) {
 	if (!host->fifo_mode)
 		writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
 
+	mmc->cfg->ops = &dw_mmc_ops;
+
     return 0;
 }
 
@@ -525,7 +534,7 @@ dw_mmc_init_host(mmc_t *mmc) {
 
     host = &dw_mmc0;
     host->name = dev_name;
-    host->mmc->priv = host;
+    mmc->priv = host;
 
     return 0;
 }

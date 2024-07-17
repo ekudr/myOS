@@ -23,7 +23,7 @@ int board_init_mmc(mmc_t *mmc) {
 	// bus frequency of mmc sdio on JH7110
     host->bus_hz = 50000000;
 
-	
+
 	fifo_depth = 32;
 	host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_depth / 2 - 1) | TX_WMARK(fifo_depth / 2);
 	host->fifo_mode = 1;
@@ -38,7 +38,8 @@ int board_init_mmc(mmc_t *mmc) {
 	cfg->f_min = 400000;
 	cfg->f_max = 50000000;
 	cfg->voltages = MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_165_195;
-	cfg->host_caps = host->caps;
+	cfg->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT | MMC_MODE_4BIT
+                 | MMC_CAP(SD_HS);
 
 	if (host->buswidth == 8) {
 		cfg->host_caps |= MMC_MODE_8BIT;
