@@ -3,6 +3,8 @@
 #include <sdhci.h>
 #include <dwmmc.h>
 
+void _hart_start();
+int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 
 // set board specific settings
 // Synopsys DW MMC host SD_CARD
@@ -52,7 +54,7 @@ int board_init_mmc(mmc_t *mmc) {
 
 	cfg->b_max = 1024;
 
-	
+    mmc->host_caps = cfg->host_caps;
 
 	/* Setup dsr related values */
 	mmc->dsr_imp = 0;
@@ -65,6 +67,21 @@ int board_init_mmc(mmc_t *mmc) {
         return err;
 
     return 0;
+}
+
+void 
+board_uart_init(void) {
+    ns16550_uart_init();
+}
+
+void
+board_start_harts(void) {
+    for (int i = 1; i < CONFIG_MP_NUM_CPUS+1; i++) {
+        if(i != cpuid()) {
+            sbi_hsm_hart_start(i, (uint64)_hart_start, 2);
+            udelay(100000);             
+        }       
+    }
 }
 
 int

@@ -33,8 +33,12 @@ start_entry:
 
 	la a2, boot_cpu_hartid
 	sd a0, (a2)
+// cpu id = hart id - 1
+// hart 0 not use
+    li t0, 1
+    sub t0, a0, t0
 
-    mv tp,a0
+    mv tp,t0
 
     /*  Set stack */
     la t0, _stack_top   /* Stack base */
@@ -57,7 +61,12 @@ _hart_start:
     csrw sie, zero
     csrw sip, zero
 
-    mv tp,a0
+// cpu id = hart id - 1
+// hart 0 not use
+    li t0, 1
+    sub t0, a0, t0
+
+    mv tp,t0
 
         /*  Set stack */
     la t0, _stack_top   /* Stack base */

@@ -21,7 +21,7 @@ int boot_disk_init(void){
 
     if (err) {
         printf("[DISK] read GPT header return %d\n", err);
-        return -1;  
+        return err;  
     }
     
 
@@ -48,14 +48,16 @@ int boot_disk_init(void){
     err =  boot_disk.mmc->bread(gpt_en, next_lba, gpt->sizeof_partition_entry*gpt->num_partition_entries/0x200);
     if (err) {
         printf("[DISK] read GPT entry return %d\n", err);
-        return -1;  
+        return err;  
     }
 
-    for (int i=0; i< 4/*gpt->num_partition_entries*/; i++) {
+    efi_char16_t bootfs_name[] = {'b', 'o', 'o', 't', 'f', 's', 0x00};
+
+    for (int i=0; i< 7/*gpt->num_partition_entries*/; i++) {
  //       if(gpt_en[i].partition_type_guid.b[0]) { 
             printf("[DISK] partition %d type GUID ", i);
-            for (int i = 0; i < 16; i++) {
-                printf("%X ", gpt_en[i].partition_type_guid.b[i]);
+            for (int j = 0; j < 16; j++) {
+                printf("%X ", gpt_en[i].partition_type_guid.b[j]);
             }
             printf("\n");
             printf("[DISK] unique GUID ");
@@ -64,14 +66,30 @@ int boot_disk_init(void){
             }
             printf("\n");            
             printf("[DISK] GPT: partition %i lbas 0x%lX -> 0x%lX\n", i, gpt_en[i].starting_lba, gpt_en[i].ending_lba);
-
-            if(i == 2) 
+            printf("[DISK] Name ");
+            for (int j = 0; j < 36; j++) {
+                printf("%X", gpt_en[i].partition_name[j]);
+            }
+            printf("\n");  
+            if(!sbi_memcmp(gpt_en[i].partition_name, bootfs_name, 7)) 
                 boot_disk.fat_lba = gpt_en[i].starting_lba;
 //        }
     }
 
     mfree(gpt_en);
     mfree(gpt);
+
+    char buf[512];
+    err = boot_disk.mmc->bread(buf, 0x2002, 1); 
+    if (err) {
+        printf("[DISK] read BOOTFS return %d\n", err);
+        return err;  
+    }
+
+    for(int i = 0; i<512; i++){
+        printf("0x%X ", buf[i]);
+    }
+
 
     printf("[DISK] boot fat partition starts at 0x%X\n", boot_disk.fat_lba);
 

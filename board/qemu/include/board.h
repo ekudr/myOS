@@ -3,7 +3,7 @@
 
 #define __SIFIVE_U__
 
-#define CONFIG_MP_NUM_CPUS      5    /* all harts */
+#define CONFIG_MP_NUM_CPUS      4   
 
 /* Map the whole I/O memory with vaddr = paddr mappings */
 
@@ -29,6 +29,9 @@
 
 
 #define CONFIG_SYS_TIMER_RATE 1000000;
+
+#define CONFIG_NUM_IRQS  53 // Num interrupts
+#define NR_IRQS    CONFIG_NUM_IRQS
 
 /* !!!!!!! Check alll !!!!!!!*/
 

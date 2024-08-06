@@ -40,26 +40,41 @@ void memset(void *b, int c, int len)
     }
 */
 
-void boot_init_hart(){
+void boot_init_hart(int hart){
 
-    __sync_synchronize();
+    cpu_set_hartid(r_tp(), hart);
 
     printf("hart %d starting\n", cpuid());
     printf("stack pointer: 0x%lX\n", r_sp());
 
-    mmu_enable((uint64_t)g_kernel_pgt_base, 0);    // turn on paging
-    w_stvec((uint64)kernelvec);   // install kernel trap vector
-//    plicinithart();   // ask PLIC for device interrupts
+ //   mmu_enable((uint64_t)g_kernel_pgt_base, 0);    // turn on paging
+printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
+    // wait for any previous writes to the page table memory to finish.
+  sfence_vma();
 
+  w_satp(MAKE_SATP(g_kernel_pgt_base));
+
+  // flush stale entries from the TLB.
+  sfence_vma();
+
+    w_stvec((uint64)kernelvec);   // install kernel trap vector
+    plic_hart_init();   // ask PLIC for device interrupts
+
+    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE*/ | SIE_SSIE);
+    w_sstatus(r_sstatus() | SSTATUS_SIE);
+    printf("S mode status register 0x%lX\n",r_sstatus());
+    printf("S mode interrupt register 0x%lX\n",r_sie());
+    printf("S interrupt pending register 0x%lX\n",r_sip());
+ 
   scheduler();   
 }
      
 
 
-
-int boot_start(void)
+int boot_start(int hart)
 {
 
+    cpu_set_hartid(r_tp(), hart);
     /* Prepare the bss memory region */
 //    memset(&_bss_start, 0, (&_bss_end - &_bss_start));
 
@@ -104,21 +119,17 @@ int boot_start(void)
     trap_init();
     printf("Done.\n");
 
+    led_init();
+
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
-    w_sstatus(r_sstatus() | SSTATUS_SIE);
-    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     
+    w_sie(r_sie() | SIE_SEIE | /*SIE_STIE |*/ SIE_SSIE);
+    w_sstatus(r_sstatus() | SSTATUS_SIE);
+    
+
     printf("Done.\n");
 
-	printf("[CONSOLE] init ... ");
-    ns16550_uart_init();
-	printf("Done.\n");
-
-//   for (int i = 0; i < 30; i++) {
-//        printf("%d ", i);
-//        udelay(1000000);
-//    }
 
     kernel_init();
 

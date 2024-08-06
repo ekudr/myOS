@@ -1,7 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * SBI initialilization and all extension implementation.
+ *
+ * Copyright (c) 2020 Western Digital Corporation or its affiliates.
+ */
+
 #include <sbi_ecall_interface.h>
 #include <common.h>
 #include <string.h>
 
+
+static void (*__sbi_set_timer)(uint64_t stime);
 
 /* default SBI version is 0.1 */
 unsigned long sbi_version = 0x1; 
@@ -67,7 +76,16 @@ long sbi_probe_extension(int extid)
 	return 0;
 }
 
-void sbi_set_timer(uint64_t stime_value) {
+void __sbi_set_timer_v01(uint64_t stime_value) {
+#if __riscv_xlen == 32
+	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, stime_value,
+		  stime_value >> 32, 0, 0, 0, 0);
+#else
+	sbi_ecall(SBI_EXT_0_1_SET_TIMER, 0, stime_value, 0, 0, 0, 0, 0);
+#endif
+}
+
+void __sbi_set_timer_v02(uint64_t stime_value) {
 #if __riscv_xlen == 32
 	sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, stime_value,
 		  stime_value >> 32, 0, 0, 0, 0);
@@ -75,6 +93,16 @@ void sbi_set_timer(uint64_t stime_value) {
 	sbi_ecall(SBI_EXT_TIME, SBI_EXT_TIME_SET_TIMER, stime_value, 0,
 		  0, 0, 0, 0);
 #endif
+}
+
+/**
+ * sbi_set_timer() - Program the timer for next timer event.
+ * @stime_value: The value after which next timer event should fire.
+ *
+ * Return: None.
+ */
+void sbi_set_timer(uint64_t stime_value) {
+	__sbi_set_timer(stime_value);
 }
 
 int sbi_hsm_hart_get_status(unsigned long hartid) {
@@ -111,13 +139,30 @@ void sbi_init (void) {
 
     printf("SBI detected version %d.%d\n", (sbi_version >> 24) & 0x7f, sbi_version & 0x7f);
 
-if (sbi_probe_extension(SBI_EXT_HSM)) {
-			
-	printf("SBI HSM extension detected\n");
-	for(int i=0; i<CONFIG_MP_NUM_CPUS; i++){
-		printf("SBI HSM hart %d status %d\n", i, sbi_hsm_hart_get_status(i));
+	if (sbi_probe_extension(SBI_EXT_TIME)) {
+		__sbi_set_timer = __sbi_set_timer_v02;
+		printf("SBI TIME extension detected\n");
+	} else {
+		__sbi_set_timer = __sbi_set_timer_v01;
 	}
-}
+
+	if (sbi_probe_extension(SBI_EXT_HSM)) {
+				
+		printf("SBI HSM extension detected\n");
+		for(int i=0; i<CONFIG_MP_NUM_CPUS; i++){
+			printf("SBI HSM hart %d status %d\n", i, sbi_hsm_hart_get_status(i));
+		}
+	}
     
+}
+
+void sbi_hsm_info(void) {
+		if (sbi_probe_extension(SBI_EXT_HSM)) {
+				
+		printf("SBI HSM extension detected\n");
+		for(int i=0; i<CONFIG_MP_NUM_CPUS; i++){
+			printf("SBI HSM hart %d status %d\n", i, sbi_hsm_hart_get_status(i));
+		}
+	}
 }
 

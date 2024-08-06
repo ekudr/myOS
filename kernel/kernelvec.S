@@ -8,7 +8,7 @@
         #
 .globl kerneltrap
 .globl kernelvec
-.align 4
+.balign 64
 kernelvec:
         # make room to save registers.
         addi sp, sp, -256
@@ -47,7 +47,7 @@ kernelvec:
         sd t6, 240(sp)
 
         # call the C trap handler in trap.c
-        call kerneltrap
+        call kerneltrap   
 
         # restore registers.
         ld ra, 0(sp)

@@ -8,7 +8,10 @@
 #include <string.h>
 #include <board.h>
 
+
 typedef enum { false, true } bool;
+
+#include <mmc.h>
 
 #define locate_data(n) __attribute__((section(n)))
 #define _ALIGN(n) __attribute__ ((aligned (n)))
@@ -37,6 +40,7 @@ typedef enum { false, true } bool;
 
 
 #define debug	printf
+#define DEBUG	debug
 
 
 /* Kernel code memory (RX) */
@@ -78,9 +82,16 @@ void lib_puts(char *s);
 
 void panic(char*) __attribute__((noreturn));
 
+
+
 void udelay(unsigned long usec);
+uint64_t get_timer(uint64_t base);
 void *malloc(uint64 size);
 void mfree(void *ptr);
+
+int board_init_mmc(mmc_t *mmc);
+int board_timer_init(void);
+void board_uart_init(void);
 
 
 #endif /* _COMMON_H */

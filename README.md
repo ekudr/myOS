@@ -19,3 +19,15 @@ ninja -C build
 ```
 
 ## Run
+### BPI-F3
+```
+dhcp
+tftpboot 0x10000000 192.168.1.1:OSImage.bin
+go 0x10000000
+```
+### VisionFive 2
+```
+dhcp
+tftpboot 0x40200000 192.168.1.1:OSImage.bin
+go 0x40200000
+```

@@ -23,11 +23,13 @@ void trap_init(void) {
 // interrupts and exceptions from kernel code go here via kernelvec,
 // on whatever the current kernel stack is.
 void kerneltrap() {
+  
   int which_dev = 0;
   uint64 sepc = r_sepc();
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
-  
+//  printf("trap in TP 0x%lX SSTATUS 0x%lX sepc 0x%lX\n", r_tp(), r_sstatus(), r_sepc());
+
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
   if(intr_get() != 0)
@@ -40,21 +42,28 @@ void kerneltrap() {
   }
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2 && mytask() != 0 && mytask()->state == RUNNING)
-    yield();
+  //if(which_dev == 2 && mytask() != 0 && mytask()->state == RUNNING)
+  //  yield();
+
+
   
+//  printf("0x%lX ", r_sip());  
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.
+  
   w_sepc(sepc);
   w_sstatus(sstatus);
+
+//  printf("trap out TP 0x%lX SSTATUS 0x%lX sepc 0x%lX\n", r_tp(), r_sstatus(), r_sepc());
 }
 
 void
 clockintr()
 {
   acquire(&tickslock);
+//  printf(".");
   ticks++;
-  wakeup(&ticks);
+//  wakeup(&ticks);
   release(&tickslock);
 }
 
@@ -77,7 +86,17 @@ devintr(void)
 
     if(irq == UART0_IRQ){
       uart_intr();
-    } else if(irq){
+    } 
+#ifdef __SPACEMIT_K1__
+      else if (irq == TIMER1_IRQ) {
+//        printf("IRQ %d Hart %d\n", irq, cpuid());
+//        uart_int_pending();
+//        plic_info();
+        board_timer_reset();
+        led_switch();
+    } 
+#endif    
+      else if(irq){
       printf("unexpected interrupt irq=%d\n", irq);
     }
 
@@ -97,7 +116,7 @@ devintr(void)
     
     // acknowledge the software interrupt by clearing
     // the SSIP bit in sip.
-    w_sip(r_sip() & ~2);
+    w_sip(r_sip() & ~0x2);
 
     return 2;
   } else {

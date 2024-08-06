@@ -59,6 +59,20 @@ static inline void putreg64(uint64_t v, const volatile uintreg_t a)
 #define SSTATUS_SIE (1L << 1)  // Supervisor Interrupt Enable
 #define SSTATUS_UIE (1L << 0)  // User Interrupt Enable
 
+static inline uint64
+r_mstatus()
+{
+  uint64 x;
+  asm volatile("csrr %0, mstatus" : "=r" (x) );
+  return x;
+}
+
+static inline void 
+w_mstatus(uint64 x)
+{
+  asm volatile("csrw mstatus, %0" : : "r" (x));
+}
+
 static inline uint64 r_sstatus()
 {
   uint64 x;
@@ -199,5 +213,36 @@ static inline int intr_get() {
   uint64 x = r_sstatus();
   return (x & SSTATUS_SIE) != 0;
 }
+
+// Machine Exception Delegation
+static inline uint64
+r_medeleg()
+{
+  uint64 x;
+  asm volatile("csrr %0, medeleg" : "=r" (x) );
+  return x;
+}
+
+static inline void 
+w_medeleg(uint64 x)
+{
+  asm volatile("csrw medeleg, %0" : : "r" (x));
+}
+
+// Machine Interrupt Delegation
+static inline uint64
+r_mideleg()
+{
+  uint64 x;
+  asm volatile("csrr %0, mideleg" : "=r" (x) );
+  return x;
+}
+
+static inline void 
+w_mideleg(uint64 x)
+{
+  asm volatile("csrw mideleg, %0" : : "r" (x));
+}
+
 
 #endif /* _SYS_RISCV_H */

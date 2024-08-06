@@ -69,13 +69,11 @@
 /* Hart 1 S-Mode Claim / Complete */
 #define PLIC_CLAIM     (PLIC_BASE + 0x202004)
 
-#define PLIC_SENABLE(hart) (PLIC_BASE + 0x2100 + (hart)*0x100)
+#define PLIC_SENABLE(hart) (PLIC_BASE + 0x2100 + (hart-1)*0x100)
 
+#define PLIC_SPRIORITY(hart) (PLIC_THRESHOLD + (hart-1)*0x2000)
 
-
-#define PLIC_SPRIORITY(hart) (PLIC_THRESHOLD + (hart)*0x2000)
-
-#define PLIC_SCLAIM(hart) (PLIC_CLAIM + (hart)*0x2000)
+#define PLIC_SCLAIM(hart) (PLIC_CLAIM + (hart-1)*0x2000)
 
 
 #define SDIO1_BASE 0x16020000UL

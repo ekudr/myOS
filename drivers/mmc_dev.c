@@ -4,7 +4,6 @@
 
 extern disk_t boot_disk;
 
-int mmc_bread(mmc_t *mmc,void* dst, uint32_t src_lba, size_t size);
 
 // we use one MMC device for SD card
 // drivers from U-boot

@@ -264,7 +264,7 @@ static int sdhci_send_command(mmc_t *mmc, struct mmc_cmd *cmd,
 	if (!ret) {
 		if ((host->quirks & SDHCI_QUIRK_32BIT_DMA_ADDR) &&
 				!is_aligned && (data->flags == MMC_DATA_READ))
-			memcpy(data->dest, host->align_buffer, trans_bytes);
+			sbi_memcpy(data->dest, host->align_buffer, trans_bytes);
 		return 0;
 	}
 
@@ -473,7 +473,7 @@ sdhci_set_voltage(sdhci_host_t *host) {
 			}
 
 			/* Wait for 5ms */
-			mdelay(5);
+			udelay(5000); // mdelay(5);
 
 			/* 3.3V regulator output should be stable within 5 ms */
 			if (IS_SD(mmc)) {
@@ -511,7 +511,7 @@ sdhci_set_voltage(sdhci_host_t *host) {
 			}
 
 			/* Wait for 5 ms */
-			mdelay(5);
+			udelay(5000); // mdelay(5);
 
 			/* 1.8V regulator output has to be stable within 5 ms */
 			if (IS_SD(mmc)) {

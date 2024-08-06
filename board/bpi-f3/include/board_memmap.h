@@ -68,14 +68,13 @@
 #define PLIC_ENABLE2   (PLIC_BASE + 0x002104)
 
 /* Hart 1 S-Mode Priority Threshold */
-#define PLIC_THRESHOLD (PLIC_BASE + 0x202000)
+#define PLIC_THRESHOLD (PLIC_BASE + 0x201000)
 
 /* Hart 1 S-Mode Claim / Complete */
-#define PLIC_CLAIM     (PLIC_BASE + 0x202004)
+#define PLIC_CLAIM     (PLIC_BASE + 0x201004)
 
-#define PLIC_SENABLE(hart) (PLIC_BASE + 0x2100 + (hart)*0x100)
-
-
+#define PLIC_SENABLE(hart) (PLIC_BASE + 0x2080 + (hart)*0x100)
+#define PLIC_MENABLE(hart) (PLIC_BASE + 0x2000 + (hart)*0x100)
 
 #define PLIC_SPRIORITY(hart) (PLIC_THRESHOLD + (hart)*0x2000)
 
@@ -84,5 +83,15 @@
 
 #define SDIO1_BASE 0xD4280000UL
 
+
+#define GPIO_BASE   0xD4019000UL
+
+#define PINCTRL_BASE 0xD401E000UL
+
+#define TIMER1_CLK_BASE 0xD4015034UL
+#define TIMER2_CLK_BASE 0xD4015044UL
+#define TIMER1_BASE     0xD4014000UL
+#define TIMER2_BASE     0xD4014000UL
+#define TIMER1_IRQ      23
 
 #endif /* _JH7110_MEMMAP_H */

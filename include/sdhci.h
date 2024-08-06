@@ -344,31 +344,31 @@ typedef struct sdhci_host {
 
 static inline void sdhci_writel(struct sdhci_host *host, u32 val, int reg)
 {
-	putreg32(val, host->ioaddr + reg);
+	putreg32(val, (uintreg_t)(host->ioaddr + reg));
 }
 
 static inline void sdhci_writew(struct sdhci_host *host, u16 val, int reg)
 {
-	putreg16(val, host->ioaddr + reg);
+	putreg16(val, (uintreg_t)(host->ioaddr + reg));
 }
 
 static inline void sdhci_writeb(struct sdhci_host *host, u8 val, int reg)
 {
-	putreg8(val, host->ioaddr + reg);
+	putreg8(val, (uintreg_t)(host->ioaddr + reg));
 }
 static inline u32 sdhci_readl(struct sdhci_host *host, int reg)
 {
-	return getreg32(host->ioaddr + reg);
+	return getreg32((uintreg_t)(host->ioaddr + reg));
 }
 
 static inline u16 sdhci_readw(struct sdhci_host *host, int reg)
 {
-	return getreg16(host->ioaddr + reg);
+	return getreg16((uintreg_t)(host->ioaddr + reg));
 }
 
 static inline u8 sdhci_readb(struct sdhci_host *host, int reg)
 {
-	return getreg8(host->ioaddr + reg);
+	return getreg8((uintreg_t)(host->ioaddr + reg));
 }
 
 

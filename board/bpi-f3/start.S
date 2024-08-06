@@ -31,8 +31,13 @@ start_entry:
 //    li t0, (0x6000 | 0x600)
 //    csrc sstatus, t0
 
+
+
 	la a2, boot_cpu_hartid
 	sd a0, (a2)
+
+    li t0, 1
+    sub a0, a0, t0
 
     mv tp,a0
 

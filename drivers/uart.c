@@ -18,9 +18,12 @@
 #define UART_FCR_FIFO_ENABLE (1<<0)
 #define UART_FCR_FIFO_CLEAR (3<<1) // clear the content of the two FIFOs
 #define UART_ISR 2                 // interrupt status register
+#define UART_ISR_INT_PEN  (1<<0)    // interrupt pending
 #define UART_LCR 3                 // line control register
 #define UART_LCR_EIGHT_BITS (3<<0)
 #define UART_LCR_BAUD_LATCH (1<<7) // special mode to set baud rate
+#define UART_MSR 4                 // Modem Control Register
+#define UART_MSR_OUT2 (1<<3)
 #define UART_LSR 5                 // line status register
 #define UART_LSR_RX_READY (1<<0)   // input is waiting to be read from RHR
 #define UART_LSR_TX_IDLE (1<<5)    // THR can accept another character to send
@@ -54,11 +57,15 @@ void uart_start();
 
 void ns16550_uart_init(void) {
 
+DEBUG("[UART] MSR reg 0x%X\n", REGB(UART0, UART_MSR));
+
   // wait transmitter empty
   while ((REGW(UART0, UART_LSR) & UART_LSR_EMPTY_MASK) == 0);
 
   // disable interrupts.
   REGB(UART0, UART_IER) = 0x00;
+
+
 
   // and set word length to 8 bits, no parity.
   REGB(UART0, UART_LCR) = UART_LCR_EIGHT_BITS;
@@ -76,13 +83,39 @@ void ns16550_uart_init(void) {
   // and set word length to 8 bits, no parity.
   REGB(UART0, UART_LCR) = UART_LCR_EIGHT_BITS;
 
+#if defined(__SPACEMIT_K1__) 
+  // Enabling interrupts
+  // OUT2 Signal Control.
+  // OUT2 connects the UART interrupt output to the interrupt controller unit. When <Loopback Mode> is clear.
+  REGB(UART0, UART_MSR) |= UART_MSR_OUT2;
+#endif
   // reset and enable FIFOs.
+  REGB(UART0, UART_FCR) = UART_FCR_FIFO_ENABLE;
   REGB(UART0, UART_FCR) = UART_FCR_FIFO_ENABLE | UART_FCR_FIFO_CLEAR;
 
-  // enable transmit and receive interrupts.
-  REGB(UART0, UART_IER) = UART_INIT_IER | UART_IER_TX_ENABLE | UART_IER_RX_ENABLE;
+	/*
+	 * Clear the interrupt registers.
+	 */
+	(void) REGB(UART0, UART_LSR);
+	(void) REGB(UART0, UART_RHR);
+	(void) REGB(UART0, UART_ISR);
+	(void) REGB(UART0, UART_MSR);
+
+  // enable unit.
+  REGB(UART0, UART_IER) = UART_INIT_IER;
+
+    // enable transmit and receive interrupts.
+  REGB(UART0, UART_IER) = REGB(UART0, UART_IER) | /*UART_IER_TX_ENABLE |*/ UART_IER_RX_ENABLE;
 
   initlock(&uart_tx_lock, "uart");
+
+	/*
+	 * Clear the interrupt registers.
+	 */
+	(void) REGB(UART0, UART_LSR);
+	(void) REGB(UART0, UART_RHR);
+	(void) REGB(UART0, UART_ISR);
+	(void) REGB(UART0, UART_MSR);
 
 // printf("[UART] irq reg 0x%X", REGB(UART0, UART_IER) );
   uart_inited = 0x55555555;
@@ -233,17 +266,20 @@ void lib_puts(char *s) {
 // both. called from devintr().
 void uart_intr(void) {
 
-  panic("[UART] irq");
   // read and process incoming characters.
   while(1){
-    int c = uart_getc();
+    int c = ns16550_uart_getc();
     if(c == -1)
       break;
-//    console_intr(c);
+    console_intr(c);
   }
-
+ 
   // send buffered characters.
   acquire(&uart_tx_lock);
   uart_start();
   release(&uart_tx_lock);
+}
+
+void uart_int_pending(void) {
+  printf("UART IRQ STATUS 0x%X\n",REGB(UART0, UART_ISR));
 }

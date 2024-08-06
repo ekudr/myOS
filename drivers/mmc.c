@@ -696,7 +696,7 @@ sd_select_mode_and_width(mmc_t *mmc, uint32_t card_caps) {
 //#if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
 //	bool uhs_en = (mmc->ocr & OCR_S18R) ? true : false;
 //#else
-	bool uhs_en = false;
+//	bool uhs_en = false;
 //#endif
 	uint32_t caps;
 
@@ -1264,7 +1264,7 @@ mmc_complete_op_cond(mmc_t *mmc) {
  */
 static void 
 mmc_set_initial_state(mmc_t *mmc) {
-	int err;
+//	int err;
 
 	/* First try to set 3.3V. If it fails set to 1.8V */
 //	err = mmc_set_signal_voltage(mmc, MMC_SIGNAL_VOLTAGE_330);
@@ -1280,8 +1280,8 @@ mmc_set_initial_state(mmc_t *mmc) {
 
 static int 
 mmc_power_cycle(mmc_t *mmc) {
-	int ret;
-/*
+/*	int ret;
+
 	ret = mmc_power_off(mmc);
 	if (ret)
 		return ret;
@@ -1295,7 +1295,7 @@ mmc_power_cycle(mmc_t *mmc) {
 	 * to be on the safer side.
 	 */
 //	udelay(2000);
-//	return mmc_power_on(mmc);
+	return 0/*mmc_power_on(mmc)*/;
 }
 
 static int 
@@ -1375,9 +1375,7 @@ int mmc_bread(void* dst, uint32_t src_lba, size_t size) {
 }
 
 int mmc_init(mmc_t *mmc) {
-    
 
-    char *buf[512];
  	bool no_card;
 	int err = 0;
 
@@ -1385,9 +1383,7 @@ int mmc_init(mmc_t *mmc) {
     no_card = 0;  // dw_getcd(mmc);
     if (no_card) {
 		mmc->has_init = 0;
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
 		printf("[MMC] no card present\n");
-#endif
 		return -ENOMEDIUM;
 	}
 

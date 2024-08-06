@@ -33,7 +33,9 @@ void uart_init(void);
 int boot_disk_init(void);
 int kernel_init(void);
 
-void boot_init_hart(){
+void boot_init_hart(int hart){
+
+    cpu_set_hartid(r_tp(), hart);
 
     __sync_synchronize();
 
@@ -50,11 +52,12 @@ void boot_init_hart(){
 
 
 
-int boot_start(void)
+int boot_start(int hart)
 {
     char *buf[512];
     int err;
 
+    cpu_set_hartid(r_tp(), hart);
  	sbi_init();
 
     board_init();
@@ -66,6 +69,7 @@ int boot_start(void)
     printf("Timer: 0x%lx\n",get_timer(0));
 
     printf("Boot HART is 0x%lX\n", boot_cpu_hartid);
+    printf("Boot HART_ID 0x%lX\n", cpu_get_hartid(r_tp()));
     printf("TP is 0x%lX\n", r_tp());
 
     mm_init();
@@ -81,23 +85,14 @@ int boot_start(void)
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
     w_sstatus(r_sstatus() | SSTATUS_SIE);
-    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
+    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE*/ | SIE_SSIE);
     
     printf("Done.\n");
 
-	printf("[CONSOLE] init ... ");   
-    sifive_uart_init();
-	printf("Done.\n");
-
+sbi_set_timer(0x3FFFFFFF);
     printf("[SD_CARD] init ... ");
     sd_init();
     printf("Done.\n");
-
-
-    for (int i = 0; i < 30; i++) {
-        printf("%d ", i);
-        udelay(1000000);
-    }
 
 
     kernel_init();
@@ -105,14 +100,3 @@ int boot_start(void)
     while(1){}
 }
 
-int board_mmc_init(void) {
-    return -1;
-}
-
-int mmc_init(void) {
-    return -1;
-}
-
-int mmc_dev_init(mmc_t *mmc) {
-    return -1;
-}

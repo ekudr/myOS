@@ -62,7 +62,7 @@ void acquire(struct spinlock *lk)
 void release(struct spinlock *lk)
 {
   if(!holding(lk))
-    printf("[SHED] Lock release\n");
+    printf("[SPINLOCK] Lock release\n");
 
   lk->cpu = 0;
 

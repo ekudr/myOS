@@ -76,6 +76,23 @@ struct cpu* mycpu(void) {
   return c;
 }
 
+void 
+cpu_set_hartid(int cpu_id, int hartid) {
+    cpus[cpu_id].hartid = hartid;
+}
+
+int
+cpu_get_hartid(int cpu_id) {
+    return cpus[cpu_id].hartid;
+} 
+
+void
+cpu_info(void) {
+    for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+        printf("[CPU] cpu id %d hart id %d\n", i, cpus[i].hartid);
+    }  
+}
+
 // Return the current struct proc *, or zero if none.
 struct task* 
 mytask(void) {
@@ -187,7 +204,8 @@ void sched(void) {
 void scheduler(void) {
   struct task *t;
   struct cpu *c = mycpu();
-  
+
+      
   c->task = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
@@ -210,6 +228,10 @@ void scheduler(void) {
       release(&t->lock);
     }
   }
+  
+ for(;;){
+//    printf(" %d ", cpuid());
+ }
 }
 
 

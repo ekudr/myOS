@@ -1,4 +1,5 @@
 #include <common.h>
+#include <spinlock.h>
 
 
 #define BACKSPACE 0x100
@@ -10,9 +11,9 @@ struct {
   // input
 #define INPUT_BUF_SIZE 128
   char buf[INPUT_BUF_SIZE];
-  uint r;  // Read index
-  uint w;  // Write index
-  uint e;  // Edit index
+  uint32_t r;  // Read index
+  uint32_t w;  // Write index
+  uint32_t e;  // Edit index
 } cons;
 
 
@@ -36,6 +37,7 @@ console_putc(int c)
 //
 // user write()s to the console go here.
 //
+/*
 int console_write(int user_src, uint64 src, int n) {
 
   int i;
@@ -49,7 +51,7 @@ int console_write(int user_src, uint64 src, int n) {
 
   return i;
 }
-
+*/
 //
 // the console input interrupt handler.
 // uartintr() calls this for input character.
@@ -62,20 +64,21 @@ void console_intr(int c)
 
   switch(c){
   case C('P'):  // Print process list.
-    procdump();
+//    procdump();
+      plic_info();
     break;
   case C('U'):  // Kill line.
     while(cons.e != cons.w &&
           cons.buf[(cons.e-1) % INPUT_BUF_SIZE] != '\n'){
       cons.e--;
-      consputc(BACKSPACE);
+      console_putc(BACKSPACE);
     }
     break;
   case C('H'): // Backspace
   case '\x7f': // Delete key
     if(cons.e != cons.w){
       cons.e--;
-      consputc(BACKSPACE);
+      console_putc(BACKSPACE);
     }
     break;
   default:
@@ -83,7 +86,7 @@ void console_intr(int c)
       c = (c == '\r') ? '\n' : c;
 
       // echo back to the user.
-      consputc(c);
+      console_putc(c);
 
       // store for consumption by consoleread().
       cons.buf[cons.e++ % INPUT_BUF_SIZE] = c;
@@ -102,10 +105,11 @@ void console_intr(int c)
 }
 
 void console_init(void) {
+    printf("[CONSOLE] init ... ");
+    initlock(&cons.lock, "cons");
 
-  initlock(&cons.lock, "cons");
-
-  uart_init();
+    board_uart_init();
+	  printf("Done.\n");
 
   // connect read and write system calls
   // to consoleread and consolewrite.

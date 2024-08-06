@@ -4,34 +4,48 @@
 #include <mmu.h> 
 #include <sched.h>
 
-void _hart_start();
-int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
+
 int boot_disk_init(void);
 int mmc_dev_init(void);
 
 int kernel_init(void) {
 
-    mmc_dev_init();
+    console_init();
+
+//    mmc_dev_init();
     
-    boot_disk_init();
+//    boot_disk_init();
 
-    printf("Timer: 0x%lx\n",get_timer(0));
-    printf("S mode status register 0x%lX\n",r_sstatus());
-    printf("S mode interrupt register 0x%lX\n",r_sie());
-	__sync_synchronize();
+    board_start_harts();
 
-    sbi_hsm_hart_start(1, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(2, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(3, (uint64)_hart_start, 2);
-    sbi_hsm_hart_start(4, (uint64)_hart_start, 2);
-
+  
 	printf("[SCHED] cpu id = 0x%lX\n", cpuid()) ;
     printf("stack pointer: 0x%lX\n", r_sp());
 
+    printf("S mode status register 0x%lX\n",r_sstatus());
+    printf("S mode interrupt register 0x%lX\n",r_sie());
+    printf("S interrupt pending register 0x%lX\n",r_sip());
+   printf("Timer: 0x%lx\n",get_timer(0));    
     printf("[USER] init ... ");
-    shed_user_init();
+ //   shed_user_init();
     printf("Done.\n");
-
-
+//    while(1){
+//        if(!uart_int_pending())
+//                printf("p ");
+//    }
+//plic_info();
+#ifdef __SPACEMIT_K1__
+    board_timer_init();
+    board_timer_set_irq();
+#endif    
+//    plic_info();
+//    board_timer_wait();
+//  sbi_set_timer(0x3FFFFFFF);
+  plic_info();
+  sbi_hsm_info();
+  cpu_info();
+//      printf("S mode status register 0x%lX\n",r_sstatus());
+//    printf("S mode interrupt register 0x%lX\n",r_sie());
+//    printf("S interrupt pending register 0x%lX\n",r_sip());
 	scheduler();
 }

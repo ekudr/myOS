@@ -4,11 +4,11 @@ drivers_sources = [
     'disk.c',
     'riscv_timer.c',
     'mmc_dev.c',
+    'console.c',    
 #     'uart.c',
 #    'kernelvec.S',
 #    'trampoline.S',
 #    'plic.c',
-#    'console.c',
 #    'syscall.c',
 ]
 
@@ -22,6 +22,7 @@ if board.contains('bpi-f3')
     drivers_sources += ['sdhci.c',
                         'spacemit_sdhci.c',
                         'mmc.c',
+                        'pinctrl.c'
         ]
 endif
 
