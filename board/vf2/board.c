@@ -40,9 +40,8 @@ int board_init_mmc(mmc_t *mmc) {
 	cfg->f_min = 400000;
 	cfg->f_max = 50000000;
 	cfg->voltages = MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_165_195;
-	cfg->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT | MMC_MODE_4BIT
-                 | MMC_CAP(SD_HS);
-
+	cfg->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT /*| MMC_MODE_4BIT | MMC_CAP(SD_HS)*/;
+/*
 	if (host->buswidth == 8) {
 		cfg->host_caps |= MMC_MODE_8BIT;
 		cfg->host_caps &= ~MMC_MODE_4BIT;
@@ -53,7 +52,7 @@ int board_init_mmc(mmc_t *mmc) {
 	cfg->host_caps |= MMC_MODE_HS | MMC_MODE_HS_52MHz | MMC_MODE_HS200;
 
 	cfg->b_max = 1024;
-
+*/
     mmc->host_caps = cfg->host_caps;
 
 	/* Setup dsr related values */
@@ -72,6 +71,41 @@ int board_init_mmc(mmc_t *mmc) {
 void 
 board_uart_init(void) {
     ns16550_uart_init();
+}
+
+void led_init(void) {
+    uint32_t shift = ((3 & 0x3) << 3);
+    uint32_t mask = 3 << shift;
+
+    // set RGPIO3 to OUT  
+    putreg32(getreg32(AON_PINCTRL_BASE) & !mask, AON_PINCTRL_BASE);
+}
+
+void led_on(void) {
+    uint32_t shift = ((3 & 0x3) << 3);
+    uint32_t mask = 3 << shift;
+
+    // set RGPIO3 to 1  
+    putreg32((getreg32(AON_PINCTRL_BASE+4) & ~mask) | (1 << shift), AON_PINCTRL_BASE+4);
+}
+
+void led_off(void) {
+    uint32_t shift = ((3 & 0x3) << 3);
+    uint32_t mask = 3 << shift;
+
+    // set RGPIO3 to 0  
+    putreg32((getreg32(AON_PINCTRL_BASE+4) & ~mask) & ~(1 << shift), AON_PINCTRL_BASE+4);
+}
+
+
+void
+led_switch(void) {
+    uint32_t shift = ((3 & 0x3) << 3);
+    uint32_t mask = 3 << shift;
+    if ((getreg32(AON_PINCTRL_BASE+4) & ~mask) & (1 << shift))
+        led_off();
+    else
+        led_on();
 }
 
 void

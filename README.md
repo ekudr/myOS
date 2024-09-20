@@ -1,6 +1,6 @@
 # myOS
 
-My try to create kind of OS for RISC-V board VisionFive 2 on JH7110 chip.
+My try to create kind of OS for RISC-V.
 
 
 Build on board under Linux.
@@ -13,6 +13,12 @@ Run from U-Boot.
 - QEMU
 
 ## Building:
+
+Steps to replace OpenSBI on Spacemit K1
+<br>
+https://gist.github.com/cyyself/a07096e6e99c949ed13f8fa16d884402
+<br>
+
 ```
 meson setup build -Dboard=bpi-f3
 ninja -C build

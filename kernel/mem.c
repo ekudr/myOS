@@ -214,6 +214,7 @@ void *malloc(uint64 size) {
 }
 
 void mfree(void *ptr) {
-    kmem_free(ptr);
+    if(ptr)
+        kmem_free(ptr);
 }
 

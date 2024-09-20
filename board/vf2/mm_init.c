@@ -85,14 +85,24 @@ void kernel_mapping(void) {
   status = mmu_map_pages(g_kernel_pgt_base,KSTART, mem_start-KSTART-1, KSTART, MMU_KDATA_FLAGS);
     if (status)
       panic("[MMU] map_init: can not map");
+
+  // map FrameBuffer
+  printf("[MMU] map framebuffer\n");
+  status = mmu_map_pages(g_kernel_pgt_base,FB, FB_SIZE-1, FB, MMU_KDATA_FLAGS);
+    if (status)
+      panic("[MMU] map_init: can not map framebuffer");
+
   /* Map the page pool */
 
   printf("[MMU] map the page pool\n");
 
-  status = mmu_map_pages(g_kernel_pgt_base, mem_start, mem_end-mem_start, mem_start, MMU_KDATA_FLAGS);
+  status = mmu_map_pages(g_kernel_pgt_base, mem_start, FB-mem_start, mem_start, MMU_KDATA_FLAGS);
     if (status)
       panic("[MMU] map_init: can not map");
 //  printf("[MMU] map the page pool status %lX\n", status);
+  status = mmu_map_pages(g_kernel_pgt_base, DDR1_BASE, DDR1_SIZE, DDR1_BASE, MMU_KDATA_FLAGS);
+    if (status)
+      panic("[MMU] map_init: can not map");
 
  // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
@@ -110,13 +120,14 @@ void mm_init(void) {
   printf("[MMU] Memory map: Stack top: 0x%lX\n", STACK_TOP);
 
   mem_start = (uintptr_t)(PGROUNDUP((uint64)STACK_TOP) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS+1);
-  mem_end = (uintptr_t)(DDR_BASE + DDR_SIZE) ;
+  mem_end = (uintptr_t)(DDR1_BASE + DDR1_SIZE - 1) ;
 
 //  mem_end = 0x81000000;  // limit for debuging
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
-  pg_pool_init((void *)mem_start, (void *)mem_end);
+  pg_pool_init((void *)mem_start, (void *)(DDR_BASE + DDR_SIZE-1));
+  pg_free_range((void *)DDR1_BASE, (void *)(DDR1_BASE + DDR1_SIZE - 1));
 
   kernel_mapping();
 

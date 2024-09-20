@@ -26,8 +26,8 @@ int board_init_mmc(mmc_t *mmc) {
 	host->bus_width	= 4;
     host->max_clk = 50000000;
   
-    host->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT | MMC_CAP(SD_HS) | MMC_CAP_CD_ACTIVE_HIGH;
-    //       | MMC_MODE_4BIT;
+    host->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT  | MMC_CAP_CD_ACTIVE_HIGH;
+    //    | MMC_CAP(SD_HS)   | MMC_MODE_4BIT;
 
     cfg = mmc->cfg;
 	cfg->name = host->name;

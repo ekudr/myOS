@@ -39,7 +39,13 @@
 /* DDR start address */
 
 #define DDR_BASE   0x40000000UL
-#define DDR_SIZE   0x200000000UL
+#define DDR_SIZE   0xbe000000UL // exclude framebuffer
+//#define DDR_SIZE   0x200000000UL
+#define DDR1_BASE   0x100000000UL
+#define DDR1_SIZE   0x100000000UL
+
+#define FB	0xfe000000UL
+#define FB_SIZE	0x2000000UL
 
 // qemu puts UART registers here in physical memory.
 #define UART0 0x10000000L
@@ -77,6 +83,8 @@
 
 
 #define SDIO1_BASE 0x16020000UL
+
+#define AON_PINCTRL_BASE 0x17020000UL
 
 
 #endif /* _JH7110_MEMMAP_H */

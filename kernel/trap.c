@@ -76,7 +76,7 @@ int
 devintr(void)
 {
   uint64_t scause = r_scause();
-
+  
   if((scause & 0x8000000000000000L) &&
      (scause & 0xff) == 9){
     // this is a supervisor external interrupt, via PLIC.
@@ -113,10 +113,12 @@ devintr(void)
     if(cpuid() == 0){
       clockintr();
     }
-    
+  //  printf(".");
     // acknowledge the software interrupt by clearing
     // the SSIP bit in sip.
-    w_sip(r_sip() & ~0x2);
+  //  w_sip(r_sip() & ~0x2);
+  //sbi_set_timer(0);
+  //  sbi_set_timer(0x3FFFFFFF);
 
     return 2;
   } else {

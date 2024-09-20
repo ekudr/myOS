@@ -58,7 +58,7 @@ printf("[MMU] mmu_enable: satp=%lX\n", g_kernel_pgt_base);
     w_stvec((uint64)kernelvec);   // install kernel trap vector
     plic_hart_init();   // ask PLIC for device interrupts
 
-    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE*/ | SIE_SSIE);
+    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     w_sstatus(r_sstatus() | SSTATUS_SIE);
     printf("S mode status register 0x%lX\n",r_sstatus());
     printf("S mode interrupt register 0x%lX\n",r_sie());
@@ -89,11 +89,20 @@ int boot_start(int hart)
     }
     */
        
-    for(int i = 0; i < FB_LEN; i++) {
-	*(u8*)(FB+i) = 0x00;
-    }
+    uint8_t *fb = FB;
+	for (int i = 0; i < 1080; ++i) {
+		for (int j = 0; j < 1920; j++) {
+				*fb++ = 180;
+				*fb++ = 180;
+				*fb++ = 180;
+				*fb++ = 0;
+			}
+	}
 
     *(u8*)(FB+((1920*540+1000)*4)) = 0xFF;
+
+    //    putpixel(FB, 1000, 500, 0xFF0000);
+    fillrect(FB, 200, 100, 200, 100, 0xFF);
 
 	sbi_init();
 
@@ -121,7 +130,7 @@ int boot_start(int hart)
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
     w_sstatus(r_sstatus() | SSTATUS_SIE);
-    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE */| SIE_SSIE);
+    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     
     printf("Done.\n");
 

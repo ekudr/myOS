@@ -1,11 +1,11 @@
 inc_include += include_directories('./include')
 
 board_sources = [
-        'start.S',
+    'start.S',
     'boot.c',
     'mm_init.c',
     'board.c',
-#    'sd.c',
+    'cache.c',
 #    'mmc.c',
 ]
 

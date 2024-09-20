@@ -9,7 +9,7 @@
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
-#define FB	(u8*)0x7f700000
+#define FB	0x7f700000
 #define FB_LEN	1920*1080*4
 
 int board_init(void);
@@ -96,6 +96,19 @@ int boot_start(int hart)
 
     *(u8*)FB = 0xFF;
 */
+    uint8_t *fb = FB;
+	for (int i = 0; i < 1080; ++i) {
+		for (int j = 0; j < 1920; j++) {
+				*fb++ = 180;
+				*fb++ = 180;
+				*fb++ = 180;
+				*fb++ = 0;
+			}
+	}
+
+//    putpixel(FB, 1000, 500, 0xFF0000);
+    fillrect(FB, 200, 100, 200, 100, 0xFF);
+
 	sbi_init();
 
  //   board_init();
@@ -124,7 +137,7 @@ int boot_start(int hart)
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
     
-    w_sie(r_sie() | SIE_SEIE | /*SIE_STIE |*/ SIE_SSIE);
+    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE */| SIE_SSIE);
     w_sstatus(r_sstatus() | SSTATUS_SIE);
     
 

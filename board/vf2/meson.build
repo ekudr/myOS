@@ -5,7 +5,7 @@ board_sources = [
     'boot.c',
     'mm_init.c',
     'board.c',
-#    'sd.c',
+    'cache.c',
 #    'mmc.c',
 ]
 

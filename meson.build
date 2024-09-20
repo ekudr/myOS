@@ -14,11 +14,11 @@ c_args = [
     '-static', 
     '-mcmodel=medany',   
 #    '-mcpu=sifive-u74',
-    '-mtune=sifive-7-series',
-    '-mno-relax',
-    '-ffreestanding',
-    '-fno-omit-frame-pointer',
-    '-O',
+#    '-mtune=sifive-7-series',
+#    '-mno-relax',
+#    '-ffreestanding',
+#    '-fno-omit-frame-pointer',
+    '-O3',
 ]
 
 board = get_option('board')
@@ -41,6 +41,7 @@ subdir('lib')
 subdir('kernel')
 subdir('drivers')
 subdir('board')
+subdir('apps')
 
 
 image = custom_target('image',

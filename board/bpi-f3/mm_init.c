@@ -78,21 +78,28 @@ void kernel_mapping(void) {
   mmu_ln_map_region(1, (uint64_t)g_kernel_pgt_base, MMU_IO_BASE, MMU_IO_BASE,
                     MMU_IO_SIZE, MMU_IO_FLAGS);
 
-  /* Map the kernel text and data for L2/L3 */
 
 
   printf("[MMU] map kernel\n");
   status = mmu_map_pages(g_kernel_pgt_base,KSTART, mem_start-KSTART-1, KSTART, MMU_KDATA_FLAGS);
     if (status)
       panic("[MMU] map_init: can not map");
-  /* Map the page pool */
 
+  // map FrameBuffer
+  printf("[MMU] map framebuffer\n");
+  status = mmu_map_pages(g_kernel_pgt_base,FB, FB_SIZE-1, FB, MMU_KDATA_FLAGS);
+    if (status)
+      panic("[MMU] map_init: can not map framebuffer");
+
+  // Map the page pool
   printf("[MMU] map the page pool\n");
 
-  status = mmu_map_pages(g_kernel_pgt_base, mem_start, mem_end-mem_start, mem_start, MMU_KDATA_FLAGS);
+  status = mmu_map_pages(g_kernel_pgt_base, mem_start, FB-mem_start, mem_start, MMU_KDATA_FLAGS);
     if (status)
       panic("[MMU] map_init: can not map");
 //  printf("[MMU] map the page pool status %lX\n", status);
+  status = mmu_map_pages(g_kernel_pgt_base, DDR1_BASE, DDR1_SIZE, DDR1_BASE, MMU_KDATA_FLAGS);
+
 
  // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
@@ -110,13 +117,14 @@ void mm_init(void) {
   printf("[MMU] Memory map: Stack top: 0x%lX\n", STACK_TOP);
 
   mem_start = (uintptr_t)(PGROUNDUP((uint64)STACK_TOP) + 0x1000 + 0x1000 * CONFIG_MP_NUM_CPUS+1);
-  mem_end = (uintptr_t)(DDR_BASE + DDR_SIZE) ;
+  mem_end = (uintptr_t)(DDR1_BASE + DDR1_SIZE - 1) ;
 
 //  mem_end = 0x81000000;  // limit for debuging
 
   printf("[MMU] Memory map: Free memory: 0x%lX -> 0x%lX\n", mem_start, mem_end);
 
-  pg_pool_init((void *)mem_start, (void *)mem_end);
+  pg_pool_init((void *)mem_start, (void *)(DDR_BASE + DDR_SIZE-1));
+  pg_free_range((void *)DDR1_BASE, (void *)(DDR1_BASE + DDR1_SIZE - 1));
 
   kernel_mapping();
 

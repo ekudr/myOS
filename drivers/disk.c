@@ -1,8 +1,12 @@
 #include <common.h>
 #include <mmc.h>
 #include <part.h>
+#include <ext4.h>
+#include <linux/errno.h>
 
 disk_t boot_disk;
+
+extern struct ext_filesystem ext_fs;
 
 int boot_disk_init(void){
     int err;
@@ -71,26 +75,24 @@ int boot_disk_init(void){
                 printf("%X", gpt_en[i].partition_name[j]);
             }
             printf("\n");  
-            if(!sbi_memcmp(gpt_en[i].partition_name, bootfs_name, 7)) 
+            if(!sbi_memcmp(gpt_en[i].partition_name, bootfs_name, 7)) {
                 boot_disk.fat_lba = gpt_en[i].starting_lba;
+                // First Sector of partition 
+                ext_fs.start_sect = gpt_en[i].starting_lba;
+                // Total Sector of partition
+                ext_fs.total_sect = gpt_en[i].ending_lba - gpt_en[i].starting_lba;
+                // Block size  of partition 
+                ext_fs.blksz = 512;
+ //               debug("partition start %d total sectors %d\n", ext_fs.start_sect, ext_fs.total_sect);
+            }
 //        }
     }
 
+
+
+
     mfree(gpt_en);
     mfree(gpt);
-
-    char buf[512];
-    err = boot_disk.mmc->bread(buf, 0x2002, 1); 
-    if (err) {
-        printf("[DISK] read BOOTFS return %d\n", err);
-        return err;  
-    }
-
-    for(int i = 0; i<512; i++){
-        printf("0x%X ", buf[i]);
-    }
-
-
     printf("[DISK] boot fat partition starts at 0x%X\n", boot_disk.fat_lba);
 
     return 0;

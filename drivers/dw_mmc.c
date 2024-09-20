@@ -266,7 +266,7 @@ int dw_send_cmd(mmc_t *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	flags |= (cmd->cmdidx | DWMCI_CMD_START | DWMCI_CMD_USE_HOLD_REG);
 
-	printf("[MMC] Sending CMD%d\n",cmd->cmdidx);
+//	debug("[MMC] Sending CMD%d\n",cmd->cmdidx);
 
 	writel(host, DWMCI_CMD, flags);
 

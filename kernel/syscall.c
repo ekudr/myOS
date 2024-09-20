@@ -1,10 +1,11 @@
 #include <common.h>
 #include <sched.h>
 #include <syscall.h>
+#include <ext4.h>
 
 
 
-/*
+
 // Fetch the uint64 at addr from the current process.
 int
 fetchaddr(uint64 addr, uint64 *ip)
@@ -25,9 +26,9 @@ fetchstr(uint64 addr, char *buf, int max)
   struct task *t = mytask();
   if(copyinstr(t->pagetable, buf, addr, max) < 0)
     return -1;
-  return strlen(buf);
+  return sbi_strlen(buf);
 }
-*/
+
 static uint64
 argraw(int n)
 {
@@ -60,12 +61,12 @@ argint(int n, int *ip)
 // Retrieve an argument as a pointer.
 // Doesn't check for legality, since
 // copyin/copyout will do that.
-void
+int
 argaddr(int n, uint64 *ip)
 {
   *ip = argraw(n);
 }
-/*
+
 // Fetch the nth word-sized system call argument as a null-terminated string.
 // Copies into buf, at most max.
 // Returns string length if OK (including nul), -1 if error.
@@ -76,7 +77,7 @@ argstr(int n, char *buf, int max)
   argaddr(n, &addr);
   return fetchstr(addr, buf, max);
 }
-*/
+
 
 uint64
 sys_exit(void)
@@ -93,6 +94,52 @@ sys_fork(void)
   return fork();
 }
 
+uint64
+sys_exec(void)
+{
+  char  *argv[32];
+  char path[256];  // should be EXT2_PATH_MAX
+  int i;
+  uint64 uargv, uarg;
+
+  //path = malloc(EXT2_PATH_MAX);
+
+  if(argstr(0, path, EXT2_PATH_MAX) < 0 || argaddr(1, &uargv) < 0){
+    return -1;
+  }
+  
+  memset(argv, 0, sizeof(argv));
+  for(i=0;; i++){
+    if(i >= NELEM(argv)){
+      goto bad;
+    }
+    if(fetchaddr(uargv+sizeof(uint64)*i, (uint64*)&uarg) < 0){
+      goto bad;
+    }
+    if(uarg == 0){
+      argv[i] = 0;
+      break;
+    }
+    argv[i] = pg_alloc(); /// rewrite to malloc()
+    if(argv[i] == 0)
+      goto bad;
+    if(fetchstr(uarg, argv[i], PAGESIZE) < 0)
+      goto bad;
+  }
+    debug("EXEC %s\n", path);
+  int ret =  0; //exec(path, argv);
+
+  for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
+    pg_free(argv[i]);
+
+  return ret;
+
+ bad:
+  for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
+    pg_free(argv[i]);
+  return -1;
+}
+
 // Prototypes for the functions that handle system calls.
 //extern uint64 sys_fork(void);
 //extern uint64 sys_exit(void);
@@ -102,6 +149,7 @@ sys_fork(void)
 static uint64 (*syscalls[])(void) = {
     [SYS_fork]    sys_fork,
     [SYS_exit]    sys_exit,
+    [SYS_exec]    sys_exec,
 };
 
 void
@@ -114,6 +162,7 @@ syscall(void)
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
+//    debug("SYSCALL %d handler 0x%lX\n", num, syscalls[num]);
     t->trapframe->a0 = syscalls[num]();
   } else {
     printf("%d %s: unknown sys call %d\n",

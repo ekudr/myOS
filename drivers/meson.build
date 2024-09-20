@@ -5,9 +5,9 @@ drivers_sources = [
     'riscv_timer.c',
     'mmc_dev.c',
     'console.c',    
-#     'uart.c',
-#    'kernelvec.S',
-#    'trampoline.S',
+    'video.c',
+    'ext4.c',
+    'fs.c',
 #    'plic.c',
 #    'syscall.c',
 ]

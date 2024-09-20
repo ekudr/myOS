@@ -227,6 +227,7 @@ void scheduler(void) {
       }
       release(&t->lock);
     }
+    asm ("wfi");
   }
   
  for(;;){
