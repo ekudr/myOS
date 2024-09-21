@@ -13,6 +13,7 @@ kernel_sources = [
     'init.c',
     'syscall.c',
     'sbi.c',
+    'exec.c',
 ]
 
 kernel_a = static_library(

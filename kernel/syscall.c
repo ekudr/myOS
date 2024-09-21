@@ -127,7 +127,7 @@ sys_exec(void)
       goto bad;
   }
     debug("EXEC %s\n", path);
-  int ret =  0; //exec(path, argv);
+  int ret = exec(path, argv);
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
     pg_free(argv[i]);

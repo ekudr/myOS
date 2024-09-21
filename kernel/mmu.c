@@ -311,6 +311,35 @@ size_t mmu_get_region_size(uint32_t ptlevel)
   return g_pgt_sizes[ptlevel - 1];
 }
 
+// Remove npages of mappings starting from va. va must be
+// page-aligned. The mappings must exist.
+// Optionally free the physical memory.
+void
+mmu_user_vmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
+{
+  uint64 a;
+  pte_t *pte;
+
+  if((va % PAGESIZE) != 0)
+    panic("uvmunmap: not aligned");
+
+  for(a = va; a < va + npages*PAGESIZE; a += PAGESIZE){
+    if((pte = mmu_walk(pagetable, a, 0)) == 0)
+      panic("uvmunmap: walk");
+    if((*pte & PTE_VALID) == 0)
+      panic("uvmunmap: not mapped");
+    if(PTE_FLAGS(*pte) == PTE_VALID)
+      panic("uvmunmap: not a leaf");
+    if(do_free){
+      uint64 pa = PTE2PA(*pte);
+      pg_free((void*)pa);
+    }
+    *pte = 0;
+  }
+}
+
+
+
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
 void 
@@ -347,6 +376,54 @@ mmu_user_vmfirst(pagetable_t pagetable, uint64_t *src, uint64_t sz) {
 
   memmove(mem, src, sz);
 }
+
+// Deallocate user pages to bring the process size from oldsz to
+// newsz.  oldsz and newsz need not be page-aligned, nor does newsz
+// need to be less than oldsz.  oldsz can be larger than the actual
+// process size.  Returns the new process size.
+uint64
+mmu_user_vmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
+{
+  if(newsz >= oldsz)
+    return oldsz;
+
+  if(PGROUNDUP(newsz) < PGROUNDUP(oldsz)){
+    int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PAGESIZE;
+    mmu_user_vmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
+  }
+
+  return newsz;
+}
+
+// Allocate PTEs and physical memory to grow process from oldsz to
+// newsz, which need not be page aligned.  Returns new size or 0 on error.
+uint64
+mmu_user_vmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
+{
+  char *mem;
+  uint64 a;
+
+  if(newsz < oldsz)
+    return oldsz;
+
+  oldsz = PGROUNDUP(oldsz);
+  for(a = oldsz; a < newsz; a += PAGESIZE){
+    mem = pg_alloc();
+    if(mem == 0){
+      mmu_user_vmdealloc(pagetable, a, oldsz);
+      return 0;
+    }
+    memset(mem, 0, PAGESIZE);
+    if(mmu_map_pages(pagetable, a, PAGESIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){
+      pg_free(mem);
+      mmu_user_vmdealloc(pagetable, a, oldsz);
+      return 0;
+    }
+  }
+  return newsz;
+}
+
+
 
 // Free user memory pages,
 // then free page-table pages.
@@ -397,6 +474,19 @@ mmu_user_pt_create() {
     return 0;
   memset(pagetable, 0, PAGESIZE);
   return pagetable;
+}
+
+// mark a PTE invalid for user access.
+// used by exec for the user stack guard page.
+void
+mmu_user_vmclear(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+  
+  pte = mmu_walk(pagetable, va, 0);
+  if(pte == 0)
+    panic("uvmclear");
+  *pte &= ~PTE_U;
 }
 
 // Copy from kernel to user.

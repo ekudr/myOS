@@ -93,5 +93,7 @@ int board_init_mmc(mmc_t *mmc);
 int board_timer_init(void);
 void board_uart_init(void);
 
+void syscall(void);
+
 
 #endif /* _COMMON_H */

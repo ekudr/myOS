@@ -16,7 +16,7 @@ c_args = [
 #    '-mcpu=sifive-u74',
 #    '-mtune=sifive-7-series',
 #    '-mno-relax',
-#    '-ffreestanding',
+    '-ffreestanding',
 #    '-fno-omit-frame-pointer',
     '-O3',
 ]
@@ -28,6 +28,7 @@ subdir('include')
 
 if board.contains('vf2')
     inc_include += include_directories('./board/vf2/include')
+    c_args += '-mtune=sifive-7-series'
 endif
 if board.contains('qemu')
     inc_include += include_directories('./board/qemu/include')
@@ -35,6 +36,7 @@ endif
 
 if board.contains('bpi-f3')
     inc_include += include_directories('./board/bpi-f3/include')
+#    c_args += '-march=rv64imafdc_zba_zbb_zbc_zbs_zicsr_zifencei_zicbom'
 endif
 
 subdir('lib')

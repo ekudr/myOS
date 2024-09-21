@@ -8,7 +8,5 @@ main(void)
     int err;
     int i = 5;
 
-    for(;;){
-
-    }
+    exit(0);
 }

@@ -2,8 +2,6 @@
 #ifndef _SYSCALL_H
 #define _SYSCALL_H
 
-void syscall(void);
-
 // System call numbers
 #define SYS_fork    1
 #define SYS_exit    2

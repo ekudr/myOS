@@ -52,13 +52,13 @@ int check_cache_range(unsigned long start, unsigned long end)
 
 void flush_dcache_range(unsigned long start, unsigned long end)
 {
-    
+  /*  
 	if (!check_cache_range(start, end))
 		return;
 
 	while (start < end) {
-		cbo_flush(start);
+//		cbo_flush(start);
 		start += RISCV_CBOM_BLOCK_SIZE;
 	}
-
+*/
 }

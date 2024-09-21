@@ -1192,6 +1192,8 @@ int bootfs_init(void) {
     splash_bmp = (char *)malloc(fsize);
     ext4_read_file("bianbu.bmp", splash_bmp, 0, fsize, &len_read);
     printf("Read of %d\n",len_read);
-    video_bmp_display(FB, splash_bmp, 500, 400);
+    video_bmp_display(FB, splash_bmp, 900, 450);
+
+	mfree(splash_bmp);
 
 }
