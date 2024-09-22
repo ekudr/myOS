@@ -1,12 +1,11 @@
 
-char *hello="Hello world!!!!\n";
+char *hello="myOS init process\n";
 int HT;
 
 int
 main(void)
 {
-    int err;
-    int i = 5;
-
-    exit(0);
+    lib_puts(hello);
+    lib_puts("ver. 0\n");
+    return 0;
 }

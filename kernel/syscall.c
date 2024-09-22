@@ -95,6 +95,15 @@ sys_fork(void)
 }
 
 uint64
+sys_putc(void)
+{
+    int c;
+    argint(0, &c);
+    console_putc(c);
+    return 0;
+}
+
+uint64
 sys_exec(void)
 {
   char  *argv[32];
@@ -150,6 +159,7 @@ static uint64 (*syscalls[])(void) = {
     [SYS_fork]    sys_fork,
     [SYS_exit]    sys_exit,
     [SYS_exec]    sys_exec,
+    [SYS_putc]    sys_putc,
 };
 
 void

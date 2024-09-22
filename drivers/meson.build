@@ -5,7 +5,6 @@ drivers_sources = [
     'riscv_timer.c',
     'mmc_dev.c',
     'console.c',    
-    'video.c',
     'ext4.c',
     'fs.c',
 #    'plic.c',
@@ -15,6 +14,7 @@ drivers_sources = [
 if board.contains('vf2')
     drivers_sources += ['mmc.c',
                         'dw_mmc.c',
+                        'video.c',
         ]
 endif
 
@@ -22,7 +22,8 @@ if board.contains('bpi-f3')
     drivers_sources += ['sdhci.c',
                         'spacemit_sdhci.c',
                         'mmc.c',
-                        'pinctrl.c'
+                        'pinctrl.c',
+                        'video.c',
         ]
 endif
 

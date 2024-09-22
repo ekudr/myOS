@@ -12,7 +12,7 @@ int bootfs_init(void);
 int kernel_init(void) {
 
     console_init();
-
+    
     mmc_dev_init();
     
     boot_disk_init();
@@ -30,6 +30,7 @@ int kernel_init(void) {
     printf("S interrupt pending register 0x%lX\n",r_sip());
    printf("Timer: 0x%lx\n",get_timer(0));    
     printf("[USER] init ... ");
+
     shed_user_init();
     printf("Done.\n");
 //    while(1){
@@ -37,8 +38,11 @@ int kernel_init(void) {
 //                printf("p ");
 //    }
 //plic_info();
-led_init();
-led_on();
+
+#if (defined(__JH7110__) || defined(__SPACEMIT_K1__))
+    led_init();
+    led_on();
+#endif
 #ifdef __SPACEMIT_K1__
     board_timer_init();
     board_timer_set_irq();

@@ -1186,6 +1186,7 @@ int bootfs_init(void) {
     uint64_t len_read;
     ext4fs_mount();
     ext4fs_ls("/spacemit");
+#if (defined(__JH7110__) || defined(__SPACEMIT_K1__))	
     ext4fs_size("bianbu.bmp", &fsize);
   
     printf("Size of file is %d\n",fsize);
@@ -1195,5 +1196,5 @@ int bootfs_init(void) {
     video_bmp_display(FB, splash_bmp, 900, 450);
 
 	mfree(splash_bmp);
-
+#endif
 }

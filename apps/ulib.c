@@ -2,6 +2,7 @@
 #include <syscall.h>
 
 int exit(int) __attribute__((noreturn));
+int putc(char);
 
 
 //
@@ -10,9 +11,14 @@ int exit(int) __attribute__((noreturn));
 void
 _start()
 {
-  extern int main();
-  main();
-  exit(0);
+    int ret;
+    extern int main();
+    ret = main();
+    exit(ret);
 }
 
-
+// Print string
+void
+lib_puts(char *s) {
+    while (*s) putc(*s++);
+}

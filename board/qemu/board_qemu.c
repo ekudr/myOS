@@ -15,15 +15,17 @@ board_uart_init(void) {
 }
 
 int board_mmc_init(void) {
-    return -1;
+    return 0;
 }
 
 int mmc_init(void) {
-    return -1;
+    return 0;
 }
 
 int mmc_dev_init(mmc_t *mmc) {
-    return -1;
+    if(sd_init())
+        return -1;
+    return 0;
 }
 
 void
