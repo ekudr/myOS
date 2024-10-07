@@ -1,6 +1,11 @@
 #include <common.h>
 #include <spinlock.h>
+#include <sched.h>
 
+// uart.c
+void uart_putc_sync(int c);
+// plic.c
+void plic_info(void);
 
 #define BACKSPACE 0x100
 #define C(x)  ((x)-'@')  // Control-x
@@ -29,6 +34,7 @@ console_putc(int c)
     // if the user typed backspace, overwrite with a space.
     uart_putc_sync('\b'); uart_putc_sync(' '); uart_putc_sync('\b');
   } else {
+    if(c == '\n') uart_putc_sync('\r');
     uart_putc_sync(c);
   }
 }

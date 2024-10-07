@@ -58,4 +58,8 @@ struct bmp_image {
 #define BMP_BI_RLE8	1
 #define BMP_BI_RLE4	2
 
+int video_bmp_display(unsigned char* screen, void *img_buff, int x, int y);
+void fillrect(unsigned char* screen, int x, int y, int w, int h, int color);
+void putpixel(unsigned char* screen, int x,int y, int color);
+
 #endif							/* __BMP_H__ */

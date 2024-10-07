@@ -1,11 +1,15 @@
 #include <common.h>
 #include <mmc.h>
 #include <sdhci.h>
+#include <sched.h>
 
 int pinctrl_set(uint32_t pin, uint32_t sel);
 void ns16550_uart_init(void);
 void _hart_start();
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
+
+int spacemit_sdhci_init(mmc_t *mmc);
+int spacemit_sdhci_init_host(mmc_t *mmc);
 
 // set board specific settings
 // Spacemit SDHCI host SD_CARD
@@ -29,7 +33,7 @@ int board_init_mmc(mmc_t *mmc) {
     host->host_caps = MMC_CAP(MMC_LEGACY) | MMC_MODE_1BIT  | MMC_CAP_CD_ACTIVE_HIGH;
     //    | MMC_CAP(SD_HS)   | MMC_MODE_4BIT;
 
-    cfg = mmc->cfg;
+    cfg = (mmc_config_t *)mmc->cfg;
 	cfg->name = host->name;
 
 //	cfg->f_min = 400000;

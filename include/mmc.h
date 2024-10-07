@@ -524,5 +524,6 @@ typedef struct mmc_config {
 #define mmc_host_is_spi(mmc)	0
 #endif
 
+int mmc_init(mmc_t *mmc);
 
 #endif /* _MMC_H */

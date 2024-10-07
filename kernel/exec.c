@@ -1,6 +1,8 @@
 #include <common.h>
 #include <sched.h>
 #include <elf.h>
+#include <mmu.h>
+#include <ext4.h>
 
 int flags2perm(int flags)
 {
@@ -16,14 +18,14 @@ int flags2perm(int flags)
 // va must be page-aligned
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
-static int
-loadseg(pagetable_t pagetable, uint64 va, char *path, uint64 offset, uint64 sz)
+int
+loadseg(pagetable_t pagetable, uint64_t va, char *path, uint64_t offset, uint64_t sz)
 {
-    uint64 i, n;
-    uint64 pa;
-    uint64 len_read;
+    uint64_t i, n;
+    uint64_t pa;
+    uint64_t len_read;
 
-    debug("EXEC read %d bytes to virt addr 0x%lX:\n", sz, va);
+//    debug("EXEC read %d bytes to virt addr 0x%lX:\n", sz, va);
 
     for(i = 0; i < sz; i += PAGESIZE){
         pa = mmu_walk_addr(pagetable, va + i);
@@ -33,8 +35,8 @@ loadseg(pagetable_t pagetable, uint64 va, char *path, uint64 offset, uint64 sz)
             n = sz - i;
         else
             n = PAGESIZE;
-        debug("    file %s offset 0x%lX phis addr 0x%lX %d bytes\n", path, offset+i, pa, n);
-        ext4_read_file(path, pa, offset+i, n, &len_read);
+//        debug("    file %s offset 0x%lX phis addr 0x%lX %d bytes\n", path, offset+i, pa, n);
+        ext4_read_file(path, (void *)pa, offset+i, n, &len_read);
         if(len_read != n)
             return -1;
     }
@@ -46,13 +48,13 @@ int
 exec(char *path, char **argv) {
     struct elfhdr *elf;
     struct proghdr *ph;
-    pagetable_t pagetable, oldpagetable;
+    pagetable_t pagetable = NULL, oldpagetable = NULL;
     uint64 len_read;
-    uint64 argc, sz = 0, sp, stackbase;
+    uint64 sz = 0, sp, stackbase;
     struct task *t = mytask();
 
     elf = (struct elfhdr *)malloc(sizeof(struct elfhdr));
-    ph = (struct elfhdr *)malloc(sizeof(struct proghdr));
+    ph = (struct proghdr *)malloc(sizeof(struct proghdr));
 
     ext4_read_file(path, elf, 0, sizeof(struct elfhdr), &len_read);
 
@@ -62,7 +64,7 @@ exec(char *path, char **argv) {
     if(elf->magic != ELF_MAGIC)
         goto err_exit;
 
-    if((pagetable = task_pagetable(t)) == 0)
+    if((pagetable = sched_task_pagetable(t)) == 0)
         goto err_exit;
 
     debug("ELF header: entry point 0x%lX, PH offset 0x%lX, PH num %d\n", elf->entry, elf->phoff, elf->phnum);
@@ -86,7 +88,6 @@ exec(char *path, char **argv) {
             goto err_exit;
         uint64 sz1;
         if((sz1 = mmu_user_vmalloc(pagetable, sz, ph->vaddr + ph->memsz, flags2perm(ph->flags))) == 0) {
-            debug("Allocated %d bytes\n");
             goto err_exit;
         }    
         sz = sz1;
@@ -120,7 +121,7 @@ exec(char *path, char **argv) {
     t->sz = sz;
     t->trapframe->epc = elf->entry;  // initial program counter = main
     t->trapframe->sp = sp; // initial stack pointer
-    task_freepagetable(oldpagetable, oldsz);
+    sched_task_freepagetable(oldpagetable, oldsz);
 
     mfree(elf);
     mfree(ph);
@@ -129,7 +130,7 @@ exec(char *path, char **argv) {
 err_exit:
     debug("EXEC error exit\n");
     if(pagetable)
-        task_freepagetable(pagetable, sz);
+        sched_task_freepagetable(pagetable, sz);
     mfree(elf);
     mfree(ph);
     return -1;

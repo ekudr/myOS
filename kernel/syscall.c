@@ -3,7 +3,7 @@
 #include <syscall.h>
 #include <ext4.h>
 
-
+void console_putc(int c);
 
 
 // Fetch the uint64 at addr from the current process.
@@ -65,6 +65,7 @@ int
 argaddr(int n, uint64 *ip)
 {
   *ip = argraw(n);
+  return 0;
 }
 
 // Fetch the nth word-sized system call argument as a null-terminated string.
@@ -167,7 +168,7 @@ syscall(void)
 {
   int num;
   struct task *t = mytask();
-
+  
   num = t->trapframe->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,

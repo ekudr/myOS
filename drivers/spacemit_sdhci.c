@@ -38,10 +38,12 @@ int
 spacemit_sdhci_init(mmc_t *mmc){
     int ret;
     sdhci_host_t *host;
+	mmc_config_t *cfg;
 
     host = mmc->priv;
+	cfg = (mmc_config_t *)mmc->cfg;
 
-    ret = sdhci_setup_cfg(mmc->cfg, host, host->max_clk, SPACEMIT_SDHC_MIN_FREQ);
+    ret = sdhci_setup_cfg(cfg, host, host->max_clk, SPACEMIT_SDHC_MIN_FREQ);
 	if (ret)
 		return ret;
     debug("[SDHCI] Host configured\n");

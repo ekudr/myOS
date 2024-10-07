@@ -56,12 +56,12 @@ void draw_a(unsigned char* screen, int x, int y) {
 }
 */
 
-void video_bmp_display(unsigned char* screen, void *img_buff, int x, int y) {
+int video_bmp_display(unsigned char* screen, void *img_buff, int x, int y) {
     struct bmp_image *bmp = (struct bmp_image *)img_buff;
     uint8_t *bmap;
     uint8_t *start, *fb;
-    unsigned long width, height, byte_width;
-    unsigned colours, bpix, bmp_bpix;
+//    unsigned long width, height, byte_width;
+    unsigned /*colours,*/ bpix, bmp_bpix;
 
     	if (!bmp || !(bmp->header.signature[0] == 'B' &&
 	    bmp->header.signature[1] == 'M')) {
@@ -94,5 +94,6 @@ void video_bmp_display(unsigned char* screen, void *img_buff, int x, int y) {
 				}
 				fb -= 1920*4/*priv->line_length*/ + width * (bpix / 8);
 			}
-    flush_dcache_range(FB, FB+FB_SIZE);
+    flush_dcache_range(FB, (uint64_t)FB+FB_SIZE);
+    return 0;
 }

@@ -56,6 +56,7 @@ extern char trampoline[], uservec[], userret[];
 
 
 void kmem_init(void);
+void kstack_init(void);
 
 
 void kernel_mapping(void) {
@@ -147,5 +148,6 @@ void mm_init(void) {
 
   printf("[KMEM] init ...\n");
   kmem_init();
+  kstack_init();
   printf("[MEM] init is Done\n");
 }

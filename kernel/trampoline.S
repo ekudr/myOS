@@ -139,6 +139,11 @@ userret:
 
         li a0, TRAPFRAME
 
+        # put the saved user a0 in sscratch, so we
+        # can swap it with our a0 (TRAPFRAME) in the last step.
+        ld t0, 112(a0)
+        csrw sscratch, t0
+
         # restore all but a0 from TRAPFRAME
         ld ra, 40(a0)
         ld sp, 48(a0)
@@ -171,8 +176,8 @@ userret:
         ld t5, 272(a0)
         ld t6, 280(a0)
 
-	# restore user a0
-        ld a0, 112(a0)
+	# restore user a0, and save TRAPFRAME in sscratch
+        csrrw a0, sscratch, a0
         
         # return to user mode and user pc.
         # usertrapret() set up sstatus and sepc.

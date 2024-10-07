@@ -3,17 +3,16 @@
 #include <sbi_ecall_interface.h>
 #include <sys/riscv.h>
 #include <mmu.h> 
+#include <mmc.h>
 #include <sched.h>
 
 
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
-#define FB	0x7f700000
-#define FB_LEN	1920*1080*4
 
 int board_init(void);
-
+void led_init(void);
 void plic_init(void); 
 void tasks_init(void);
 void mm_init(void);
@@ -23,11 +22,12 @@ void trap_init(void);
 void sbi_init (void);
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int sd_init(void);
-int mmc_init(void);
 void uart_init(void);
 int boot_disk_init(void);
 int kernel_init(void);
-int spacemit_sdhci_init(void);
+void plic_hart_init(void);
+
+
 
 
 /*
@@ -95,7 +95,7 @@ int boot_start(int hart)
     }
 
     *(u8*)FB = 0xFF;
-*/
+
     uint8_t *fb = FB;
 	for (int i = 0; i < 1080; ++i) {
 		for (int j = 0; j < 1920; j++) {
@@ -107,8 +107,8 @@ int boot_start(int hart)
 	}
 
 //    putpixel(FB, 1000, 500, 0xFF0000);
-    fillrect(FB, 200, 100, 200, 100, 0xFF);
-
+//    fillrect(FB, 200, 100, 200, 100, 0xFF);
+*/
 	sbi_init();
 
  //   board_init();
@@ -137,7 +137,7 @@ int boot_start(int hart)
 	printf("[PLIC] init interrupts ... ");
 	plic_init();
     
-    w_sie(r_sie() | SIE_SEIE /*| SIE_STIE */| SIE_SSIE);
+    w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
     w_sstatus(r_sstatus() | SSTATUS_SIE);
     
 

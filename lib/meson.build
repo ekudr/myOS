@@ -2,7 +2,7 @@
 lib_sources = [
     'string.c',
     'printf.c',
-    'sq_remfirst.c',
+#    'sq_remfirst.c',
     'memset.S',
     'memmove.S',
 ]

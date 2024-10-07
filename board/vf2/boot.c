@@ -9,8 +9,8 @@
 uint64_t boot_cpu_hartid;
 static char* version = VERSION_STR;
 
-#define FB	(u8*)0xfe000000
-#define FB_LEN	3840*2160*4
+//#define FB	(u8*)0xfe000000
+//#define FB_LEN	3840*2160*4
 
 int board_init(void);
 
@@ -23,10 +23,10 @@ void trap_init(void);
 void sbi_init (void);
 int sbi_hsm_hart_start(unsigned long hartid, unsigned long saddr, unsigned long priv);
 int sd_init(void);
-int mmc_init(void);
 void uart_init(void);
 int boot_disk_init(void);
 int kernel_init(void);
+void plic_hart_init(void);
 
 
 /*
@@ -89,7 +89,7 @@ int boot_start(int hart)
     }
     */
        
-    uint8_t *fb = FB;
+    uint8_t *fb = (uint8_t *)FB;
 	for (int i = 0; i < 1080; ++i) {
 		for (int j = 0; j < 1920; j++) {
 				*fb++ = 180;
@@ -99,10 +99,10 @@ int boot_start(int hart)
 			}
 	}
 
-    *(u8*)(FB+((1920*540+1000)*4)) = 0xFF;
+//    *(u8*)(FB+((1920*540+1000)*4)) = 0xFF;
 
     //    putpixel(FB, 1000, 500, 0xFF0000);
-    fillrect(FB, 200, 100, 200, 100, 0xFF);
+//    fillrect(FB, 200, 100, 200, 100, 0xFF);
 
 	sbi_init();
 

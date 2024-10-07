@@ -3,6 +3,7 @@
 #include <ext4.h>
 #include <linux/errno.h>
 #include <div64.h>
+#include <bmp.h>   /// check delete with loading bmp
 
 extern disk_t boot_disk;
 
@@ -35,7 +36,7 @@ ext4fs_devread(_uint64_t sector, int byte_offset, int byte_len,
 
 int 
 ext4_read_superblock(char *buffer) {
-	struct ext_filesystem *fs = &ext_fs;
+//	struct ext_filesystem *fs = &ext_fs;
 	int sect = SUPERBLOCK_START >> 9/*fs->dev_desc->log2blksz*/;
 	int off = SUPERBLOCK_START % 512/*fs->dev_desc->blksz*/;
 
@@ -179,6 +180,17 @@ ext4fs_read_inode(struct ext2_data *data, int ino, struct ext2_inode *inode) {
 		return err;
 
 	return 0;
+}
+
+void 
+ext_cache_init(struct ext_block_cache *cache) {
+	memset(cache, 0, sizeof(*cache));
+}
+
+void 
+ext_cache_fini(struct ext_block_cache *cache) {
+	mfree(cache->buf);
+	ext_cache_init(cache);
 }
 
 long int 
@@ -928,7 +940,7 @@ int ext4fs_mount(void) {
 
 fail:
 	debug("[EXT_FS] Failed to mount ext2 filesystem...\n");
-fail_noerr:
+//fail_noerr:
 	mfree(data);
 	ext4fs_root = NULL;
     return -1;
@@ -968,7 +980,7 @@ ext4fs_ls(const char *dirname) {
 int 
 ext4_read_file(const char *filename, void *buf, uint64_t offset, 
                 uint64_t len, uint64_t *len_read) {
-	uint64_t file_len;
+	uintptr_t file_len;
 	int ret;
 
 	ret = ext4fs_open(filename, &file_len);
@@ -1005,7 +1017,7 @@ ext4fs_close(void) {
 int 
 ext4fs_read_file(struct ext2fs_node *node, uint64_t pos,
 		    uint64_t len, char *buf, uint64_t *actread) {
-	struct ext_filesystem *fs = &ext_fs;
+//	struct ext_filesystem *fs = &ext_fs;
 	int i;
 	uint64_t blockcnt;
 	int log2blksz = 9;
@@ -1148,16 +1160,6 @@ ext4fs_read_file(struct ext2fs_node *node, uint64_t pos,
 	return 0;
 }
 
-void 
-ext_cache_init(struct ext_block_cache *cache) {
-	memset(cache, 0, sizeof(*cache));
-}
-
-void 
-ext_cache_fini(struct ext_block_cache *cache) {
-	mfree(cache->buf);
-	ext_cache_init(cache);
-}
 
 int 
 ext_cache_read(struct ext_block_cache *cache, uint64_t block, int size) {   
@@ -1182,7 +1184,7 @@ ext_cache_read(struct ext_block_cache *cache, uint64_t block, int size) {
 
 int bootfs_init(void) {
     char *splash_bmp;
-    uint64_t fsize = 0;
+    uintptr_t fsize = 0;
     uint64_t len_read;
     ext4fs_mount();
     ext4fs_ls("/spacemit");
@@ -1193,8 +1195,9 @@ int bootfs_init(void) {
     splash_bmp = (char *)malloc(fsize);
     ext4_read_file("bianbu.bmp", splash_bmp, 0, fsize, &len_read);
     printf("Read of %d\n",len_read);
-    video_bmp_display(FB, splash_bmp, 900, 450);
+    video_bmp_display((uint8_t *)FB, splash_bmp, 900, 450);
 
 	mfree(splash_bmp);
 #endif
+	return 0;
 }

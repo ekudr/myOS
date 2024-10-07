@@ -305,4 +305,10 @@ struct ext_block_cache {
 	int size;
 };
 
+int ext4fs_devread(_uint64_t sector, int byte_offset, int byte_len, char *buffer);
+int ext4fs_read_file(struct ext2fs_node *node, uint64_t pos, uint64_t len, char *buf, uint64_t *actread);
+int ext_cache_read(struct ext_block_cache *cache, uint64_t block, int size);
+int ext4_read_file(const char *filename, void *buf, uint64_t offset, uint64_t len, uint64_t *len_read);
+
+
 #endif /* __EXT4_H__ */

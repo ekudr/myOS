@@ -54,7 +54,7 @@ struct spinlock uart_tx_lock;
 uint64_t uart_inited;
 
 void uart_start();
-
+void console_intr(int c);
 void ns16550_uart_init(void) {
 
 DEBUG("[UART] MSR reg 0x%X\n", REGB(UART0, UART_MSR));
@@ -155,13 +155,6 @@ void uart_putc_sync(int c) {
   pop_off();
 }
 
-
-void ns16550_uart_putc(char ch) {
-
-  if(ch == '\n') _ns16550_uart_putc('\r');
-  _ns16550_uart_putc(ch);
-}
-
 void _ns16550_uart_putc(char ch) {
    
   acquire(&uart_tx_lock);
@@ -183,6 +176,14 @@ void _ns16550_uart_putc(char ch) {
 
   release(&uart_tx_lock);
 }
+
+void ns16550_uart_putc(char ch) {
+
+  if(ch == '\n') _ns16550_uart_putc('\r');
+  _ns16550_uart_putc(ch);
+}
+
+
 
 // if the UART is idle, and a character is waiting
 // in the transmit buffer, send it.

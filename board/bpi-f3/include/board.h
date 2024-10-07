@@ -17,4 +17,17 @@
 #define HEARTBEAT_SEL   (MUX_MODE1 | EDGE_NONE | PULL_DOWN | PAD_1V8_DS2)
 
 
+int board_timer_init(void);
+int board_timer_reset(void);
+int board_timer_stop(void);
+void board_timer_wait(void);
+int board_timer_set_irq(void);
+void led_init(void );
+void led_on(void );
+void led_off(void);
+void led_switch(void);
+
+// chache.c
+void flush_dcache_range(unsigned long start, unsigned long end);
+
 #endif /* __BOARD_VF2_H__ */

@@ -139,4 +139,8 @@ typedef struct disk
 	mmc_t	*mmc;
 } disk_t;
 
+
+// from fs.c
+int fs_devread(uint64_t sector, int byte_offset, int byte_len, char *buf);
+
 #endif /* __PART_H__ */

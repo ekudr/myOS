@@ -5,6 +5,7 @@
 #include <spinlock.h>
 #include <sys/riscv.h>
 #include <mmu.h>
+#include <kmem.h>
 
 
 #define NTASKS CONFIG_NUM_TASKS 
@@ -81,7 +82,7 @@ typedef struct trapframe {
   /* 264 */ uint64 t4;
   /* 272 */ uint64 t5;
   /* 280 */ uint64 t6;
-} trapframe;
+} trapframe, trapframe_t;
 
 // Per-CPU state.
 struct cpu {
@@ -95,6 +96,7 @@ struct cpu {
 extern struct cpu cpus[CONFIG_MP_NUM_CPUS];
 
 enum task_state { 
+    NEW,
     UNUSED, 
     USED, 
     SLEEPING, 
@@ -118,16 +120,38 @@ typedef struct task {
   struct task *parent;         // Parent process
 
   // these are private to the process, so p->lock need not be held.
-  uint64 kstack;               // Virtual address of kernel stack
-  uint64 sz;                   // Size of process memory (bytes)
+  kstack_t *kstack1;
+//  uint64_t kstack;               // Virtual address of kernel stack
+  uint64_t sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
   struct context context;      // swtch() here to run process
   struct file *ofile[CONFIG_NUM_FILES];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // Task list links
+  struct task *next, *prev;
+  
 } task, task_t;
 
+struct task_list {
+    task_t *head;
+    task_t *tail;
+};
+
+typedef struct task_manager {
+    int nextpid;
+    struct spinlock pid_lock;
+    struct spinlock list_lock;
+
+    struct task_list tasks;
+    task_t *inittask;
+} task_manager_t;
+
+
+// Task manager
+extern task_manager_t *gp_tm;
 
 struct cpu* mycpu(void);
 int cpuid(void);
@@ -139,14 +163,22 @@ void wakeup(void *chan);
 void yield(void);
 void reparent(task_t *t); 
 int fork(void);
+void forkret(void);
 void exit(int status);
 void sched_map_stacks(pagetable_t pgt_base);
 void free_task(task_t *t);
-task_t* alloc_task(void);
-void task_freepagetable(pagetable_t pagetable, uint64_t sz);
+int sched_alloc_pid(void);
+int sched_taskfree(task_t *t);
+task_t* sched_taskalloc(void);
+pagetable_t sched_task_pagetable(task_t *t);
+void sched_task_freepagetable(pagetable_t pagetable, uint64_t sz);
 void shed_user_init(void);
+int sched_initstart(void);
 int killed(task_t *t);
 void setkilled(task_t *t);
+void cpu_set_hartid(int cpu_id, int hartid);
+int cpu_get_hartid(int cpu_id);
+int exec(char *path, char **argv);
 
 
 

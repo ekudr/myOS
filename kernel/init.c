@@ -8,6 +8,10 @@
 int boot_disk_init(void);
 int mmc_dev_init(void);
 int bootfs_init(void);
+void console_init(void);
+void board_start_harts(void);
+
+
 
 int kernel_init(void) {
 
@@ -30,9 +34,11 @@ int kernel_init(void) {
     printf("S interrupt pending register 0x%lX\n",r_sip());
    printf("Timer: 0x%lx\n",get_timer(0));    
     printf("[USER] init ... ");
-
-    shed_user_init();
+//    newsched_test();
+//    shed_user_init();
+    sched_initstart();
     printf("Done.\n");
+//    kmem_info();
 //    while(1){
 //        if(!uart_int_pending())
 //                printf("p ");
@@ -49,7 +55,7 @@ int kernel_init(void) {
 #endif    
 //    plic_info();
 //    board_timer_wait();
-//  sbi_set_timer(0x3FFFFFF);
+    sbi_set_timer(timer_get_count()+usec_to_tick(1000000));
 //  plic_info();
 //  sbi_hsm_info();
 //  cpu_info();
@@ -57,4 +63,5 @@ int kernel_init(void) {
 //    printf("S mode interrupt register 0x%lX\n",r_sie());
 //    printf("S interrupt pending register 0x%lX\n",r_sip());
 	scheduler();
+    return 0; // never return
 }

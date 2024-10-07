@@ -10,7 +10,7 @@ csr_read_time(void)
 	return x;
 }
 
-static uint64_t timer_get_count(void)
+uint64_t timer_get_count(void)
 {
 	return csr_read_time();
 }

@@ -29,9 +29,10 @@ int mmc_dev_init(void) {
     debug("[SD_CARD] MMC OPS send_cmd 0x%lX set_ios 0x%lX\n", mmc->cfg->ops->send_cmd, mmc->cfg->ops->set_ios);    
 
     err = mmc_init(mmc);
-    if(err)
+    if(err) 
         return err;
 
+    // set boot disk    
 	boot_disk.mmc = mmc;
 	boot_disk.dev_inited = true;
     debug("[SD_CARD] Inited \n");

@@ -93,7 +93,7 @@ devintr(void)
 //        uart_int_pending();
 //        plic_info();
         board_timer_reset();
-        led_switch();
+//        led_switch();
     } 
 #endif    
       else if(irq){
@@ -118,7 +118,8 @@ devintr(void)
     // the SSIP bit in sip.
   //  w_sip(r_sip() & ~0x2);
   //sbi_set_timer(0);
-  //  sbi_set_timer(0x3FFFFFFF);
+    led_switch();
+    sbi_set_timer(timer_get_count()+usec_to_tick(1000000));
 
     return 2;
   } else {
@@ -134,6 +135,8 @@ void usertrap(void) {
 
   int which_dev = 0;
 
+  
+
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
@@ -148,7 +151,6 @@ void usertrap(void) {
   
   if(r_scause() == 8){
     // system call
-
     if(killed(t))
       exit(-1);
 //    printf("[SCHED] syscall from userspace\n");
@@ -200,7 +202,7 @@ usertrapret(void)
   // set up trapframe values that uservec will need when
   // the process next traps into the kernel.
   t->trapframe->kernel_satp = r_satp();         // kernel page table
-  t->trapframe->kernel_sp = t->kstack + PAGESIZE; // process's kernel stack
+  t->trapframe->kernel_sp = t->kstack1->start + t->kstack1->size; // process's kernel stack   t->kstack + PAGESIZE
   t->trapframe->kernel_trap = (uint64)usertrap;
   t->trapframe->kernel_hartid = r_tp();         // hartid for cpuid()
 

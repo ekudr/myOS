@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include <syscall.h>
 
-int exit(int) __attribute__((noreturn));
-int putc(char);
+
 
 
 //
@@ -19,6 +18,8 @@ _start()
 
 // Print string
 void
-lib_puts(char *s) {
-    while (*s) putc(*s++);
+lib_puts(char *s) {  
+    while (*s) {
+        putc(*s++);
+    }
 }

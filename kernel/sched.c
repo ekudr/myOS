@@ -9,26 +9,74 @@
 
 struct cpu cpus[CONFIG_MP_NUM_CPUS];
 
-struct task tasks[CONFIG_NUM_TASKS];
+//struct task tasks[CONFIG_NUM_TASKS];
 
-struct task *inittask;
+//struct task *inittask;
 
-int nextpid = 1;
-struct spinlock pid_lock;
+//int nextpid = 1;
+//struct spinlock pid_lock;
 
 extern char trampoline[]; // trampoline.S
 
 
+// Task manager
+task_manager_t g_taskmanager;
+task_manager_t *gp_tm;
 
+/*
+ *  Add task to list
+ */
+int
+sched_taskaddlist(task_t *task)
+{
+    if(gp_tm->tasks.head == NULL && gp_tm->tasks.tail == NULL) {
+        panic("SHED task list not initialized");  
+    }
+    acquire(&gp_tm->list_lock);
+        task->prev = gp_tm->tasks.tail;
+        gp_tm->tasks.tail->next = task;
+        gp_tm->tasks.tail = task;
+    release(&gp_tm->list_lock);
+    return 0;
+}
+
+/*
+ *  Remove task from list
+ */
+int
+sched_taskremlist(task_t *task)
+{
+    // remove from list without checkin the list
+    if(task->next == NULL && task->prev == NULL) {
+        debug("TASK is NOT in the list\n");
+        return -1;
+    }
+    acquire(&gp_tm->list_lock);
+    if(gp_tm->tasks.head == task){
+        task->next->prev = NULL;
+        gp_tm->tasks.head = task->next;
+    } else if(gp_tm->tasks.tail == task){
+        task->prev->next = NULL;
+        gp_tm->tasks.tail = task->prev;
+    } else {
+        task->next->prev = task->prev;
+        task->prev->next = task->next;
+    }
+    release(&gp_tm->list_lock);
+    task->next = NULL;
+    task->prev = NULL;
+    return 0;
+}
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
 void 
 sched_map_stacks(pagetable_t pgt_base) {
+/*  
   struct task *t;
   int status;
-  
+ 
   for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
     uintptr_t pg = (uintptr_t)pg_alloc();
     if(pg == 0)
@@ -38,6 +86,7 @@ sched_map_stacks(pagetable_t pgt_base) {
     if (status)
       panic("[SCHED] sched_map_stacks: can not map");
   }
+*/ 
 }
 
 // helps ensure that wakeups of wait()ing
@@ -49,15 +98,24 @@ struct spinlock wait_lock;
 // initialize the tasks table.
 void tasks_init(void)
 {
-  struct task *t;
+//  struct task *t;
   
-  initlock(&pid_lock, "nextpid");
+//  initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  /*
   for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
       initlock(&t->lock, "task");
       t->state = UNUSED;
       t->kstack = KSTACK((int) (t - tasks));
   }
+*/
+    // new ----------------
+    gp_tm = &g_taskmanager;
+    initlock(&gp_tm->pid_lock, "nextpid");
+    initlock(&gp_tm->list_lock, "tasklist");
+    gp_tm->nextpid = 1;
+    gp_tm->tasks.head = NULL;
+    gp_tm->tasks.tail = NULL;
 }
 
 // Must be called with interrupts disabled,
@@ -108,17 +166,16 @@ mytask(void) {
 void
 wakeup(void *chan)
 {
-  struct task *t;
-
-  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
-    if(t != mytask()){
-      acquire(&t->lock);
-      if(t->state == SLEEPING && t->chan == chan) {
-        t->state = RUNNABLE;
-      }
-      release(&t->lock);
+    struct task *t;
+    for(t = gp_tm->tasks.head; t != NULL; t = t->next){
+        if(t != mytask()){
+            acquire(&t->lock);
+            if(t->state == SLEEPING && t->chan == chan) {
+                t->state = RUNNABLE;
+            }
+            release(&t->lock);
+        }
     }
-  }
 }
 
 // Exit the current process.  Does not return.
@@ -129,8 +186,8 @@ exit(int status) {
 
   struct task *t = mytask();
 
-  if(t == inittask)
-    panic("init exiting");
+  if(t == gp_tm->inittask)
+      panic("init exiting");
 /*
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){
@@ -210,7 +267,25 @@ void scheduler(void) {
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-    
+    for(t = gp_tm->tasks.head; t != NULL; t = t->next){
+        acquire(&t->lock);
+        if(t->state == RUNNABLE) {
+            debug("    hart %d PID %d state %d\n", c->hartid, t->pid, t->state);          
+          
+            // Switch to chosen process.  It is the process's job
+            // to release its lock and then reacquire it
+            // before jumping back to us.
+            t->state = RUNNING;
+            c->task = t;
+            swtch(&c->context, &t->context);
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->task = 0;            
+        }
+        release(&t->lock);
+    }
+/*   
     for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++) {
       acquire(&t->lock);
       if(t->state == RUNNABLE) {
@@ -227,12 +302,9 @@ void scheduler(void) {
       }
       release(&t->lock);
     }
+*/     
     asm ("wfi");
   }
-  
- for(;;){
-//    printf(" %d ", cpuid());
- }
 }
 
 
@@ -256,7 +328,7 @@ fork(void)
   struct task *t = mytask();
 
   // Allocate process.
-  if((nt = alloc_task()) == 0){
+  if((nt = sched_taskalloc()) == 0){
     return -1;
   }
 /*
@@ -302,13 +374,12 @@ fork(void)
 // Pass t's abandoned children to init.
 // Caller must hold wait_lock.
 void
-reparent(task_t *t) {
-  task_t *tt;
-
-  for(tt = tasks; tt < &tasks[CONFIG_NUM_TASKS]; tt++){
-    if(tt->parent == t){
-      tt->parent = inittask;
-      wakeup(inittask);
+reparent(task_t *task) {
+    task_t *t;
+    for(t = gp_tm->tasks.head; t != NULL; t = t->next){
+        if(t->parent == task){
+            t->parent = gp_tm->inittask;
+        wakeup(gp_tm->inittask);
     }
   }
 }
@@ -365,51 +436,53 @@ void sleep(void *chan, struct spinlock *lk)
 
 
 
-// Create a user page table for a given process, with no user memory,
-// but with trampoline and trapframe pages.
-pagetable_t task_pagetable(struct task *t) {
+/*
+ * Create a user page table for a given process, with no user memory,
+ *  but with trampoline and trapframe pages.
+ */ 
+pagetable_t 
+sched_task_pagetable(task_t *t)
+{
+    pagetable_t pagetable;
 
-  pagetable_t pagetable;
-
-  // An empty page table.
-  pagetable = mmu_user_pt_create();
-  if(pagetable == 0)
-    return 0;
+    // An empty page table.
+    pagetable = mmu_user_pt_create();
+    if(pagetable == 0)
+        return 0;
  
-  // map the trampoline code (for system call return)
-  // at the highest user virtual address.
-  // only the supervisor uses it, on the way
-  // to/from user space, so not PTE_U.
+    // map the trampoline code (for system call return)
+    // at the highest user virtual address.
+    // only the supervisor uses it, on the way
+    // to/from user space, so not PTE_U.
  
-  if(mmu_map_pages(pagetable, TRAMPOLINE, PAGESIZE, (uint64)trampoline, PTE_R | PTE_X) < 0){    
-    mmu_user_pg_free(pagetable, 0);    
-    
-    return 0;
-  }
+    if(mmu_map_pages(pagetable, TRAMPOLINE, PAGESIZE, (uint64_t)trampoline, PTE_R | PTE_X) < 0){    
+        mmu_user_pg_free(pagetable, 0);    
+        return 0;
+    }
 
-  // map the trapframe page just below the trampoline page, for
-  // trampoline.S.
-  if(mmu_map_pages(pagetable, TRAPFRAME, PAGESIZE,
-              (uint64)(t->trapframe), PTE_R | PTE_W) < 0){
-    mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
-    mmu_user_pg_free(pagetable, 0);
-    return 0;
-  }
+    // map the trapframe page just below the trampoline page, for
+    // trampoline.S.
+    if(mmu_map_pages(pagetable, TRAPFRAME, PAGESIZE, (uint64_t)(t->trapframe), PTE_R | PTE_W) < 0){
+        mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
+        mmu_user_pg_free(pagetable, 0);
+        return 0;
+    }
 
-  return pagetable;
+    return pagetable;
 }
 
-
-int alloc_pid() {
-
-  int pid;
+/*
+ * Allocating next pid
+ */ 
+int 
+sched_alloc_pid(void) {
+    int pid;
   
-  acquire(&pid_lock);
-  pid = nextpid;
-  nextpid = nextpid + 1;
-  release(&pid_lock);
+    acquire(&gp_tm->pid_lock);
+    pid = gp_tm->nextpid++;
+    release(&gp_tm->pid_lock);
 
-  return pid;
+    return pid;
 }
 
 /* Look in the process table for an UNUSED proc.
@@ -417,6 +490,7 @@ int alloc_pid() {
 * and return with t->lock held.
 * If there are no free procs, or a memory allocation fails, return 0.
 */ 
+/*
 task_t* alloc_task(void) {
 
   struct task *t;
@@ -433,7 +507,7 @@ task_t* alloc_task(void) {
 
 found:
 
-  t->pid = alloc_pid();
+  t->pid = sched_alloc_pid();
   t->state = USED;
 
   // Allocate a trapframe page.
@@ -444,7 +518,7 @@ found:
   }
 
   // An empty user page table.
-  t->pagetable = task_pagetable(t);
+  t->pagetable = sched_task_pagetable(t);
   if(t->pagetable == 0){
     free_task(t);
     release(&t->lock);
@@ -460,18 +534,54 @@ found:
 
   return t;
 }
+*/
+/*
+*  Allocating a new task
+*/ 
+task_t*
+sched_taskalloc(void)
+{
+    task_t *t;
 
+    t = malloc(sizeof(task_t));
+    if(t == 0)
+        panic("SHED cannot alloc task mem");
+    t->pid = sched_alloc_pid();
+    t->state = NEW;
+    t->next = NULL;
+    t->prev = NULL;
 
-// Free a process's page table, and free the
-// physical memory it refers to.
+    if(sched_taskaddlist(t))
+        panic("SHED cannot add task to list");
+
+    // Allocate a trapframe page.
+    if((t->trapframe = (trapframe_t *)pg_alloc()) == 0){  
+        sched_taskfree(t);
+        return 0;
+    }
+
+    // Set up new context to start executing at forkret,
+    // which returns to user space.
+    memset(&t->context, 0, sizeof(t->context));
+
+    t->context.ra = (uint64)forkret;
+    t->context.sp = t->kstack1->start + t->kstack1->size;  // t->kstack + PAGESIZE
+
+    return t;
+}
+
+/*
+ * Free a process's page table, and free the
+ * physical memory it refers to.
+*/ 
 void
-task_freepagetable(pagetable_t pagetable, uint64_t sz) {
+sched_task_freepagetable(pagetable_t pagetable, uint64_t sz) {
   mmu_user_unmap(pagetable, TRAMPOLINE, 1, 0);
   mmu_user_unmap(pagetable, TRAPFRAME, 1, 0);
   mmu_user_pg_free(pagetable, sz);
 }
 
-
+/*
 //   free a task structure and the data hanging from it,
 //   including user pages.
 //   t->lock must be held.
@@ -481,7 +591,7 @@ free_task(task_t *t) {
     pg_free((void*)t->trapframe);
   t->trapframe = 0;
   if(t->pagetable)
-    task_freepagetable(t->pagetable, t->sz);
+    sched_task_freepagetable(t->pagetable, t->sz);
   t->pagetable = 0;
   t->sz = 0;
   t->pid = 0;
@@ -492,74 +602,54 @@ free_task(task_t *t) {
   t->xstate = 0;
   t->state = UNUSED;
 }
-
-
-
-
-
-
-// a user program that calls exec("/init")
-// assembled from ../user/initcode.S
-// od -t xC ../user/initcode
-u8 initcode[] = {
-  0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02,
-  0x97, 0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02,
-  0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
-  0x93, 0x08, 0x20, 0x00, 0x73, 0x00, 0x00, 0x00,
-  0xef, 0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69,
-  0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00
-};
-
-// Set up first user process.
-void 
-shed_user_init(void) {
-
-  struct task *t;
-
-  t = alloc_task();
-  inittask = t;
-
-  // allocate one user page and copy initcode's instructions
-  // and data into it.
-  mmu_user_vmfirst(t->pagetable, (uint64_t*)initcode, sizeof(initcode));
-  t->sz = PAGESIZE;
-
-  // prepare for the very first "return" from kernel to user.
-  t->trapframe->epc = 0;      // user program counter
-  t->trapframe->sp = PAGESIZE;  // user stack pointer
-
-  safestrcpy(t->name, "initcode", sizeof(t->name));
-//  t->cwd = namei("/");
-
-  t->state = RUNNABLE;
-//  printf("[SCHED] new task allocated pid 0x%d state %d PT 0x%lX TrpFr 0x%lX\n", inittask->pid, inittask->state, inittask->pagetable, inittask->trapframe);
-//  printf("[SCHED] context ra 0x%lX sp %lX ecp 0x%lX sp 0x%lX\n", inittask->context.ra, (uint64)inittask->context.sp, inittask->trapframe->epc, inittask->trapframe->sp);
-
-  release(&t->lock);
+*/
+/*
+ * Free task
+ */
+int
+sched_taskfree(task_t * t)
+{
+    int ret;
+    if(t == NULL) {
+        debug("[SCHED] %s zero pointer\n", __func__);
+        return -1;
+    }
+    ret = sched_taskremlist(t);
+    if(ret < 0){
+        debug("[SCHED] %s cannot remove task 0x%lX from list\n", __func__, t);
+        return -1;
+    }
+    if(t->trapframe)
+        pg_free((void*)t->trapframe);
+    if(t->pagetable)
+        sched_task_freepagetable(t->pagetable, t->sz);
+    if(t->kstack1)
+        kstack_free(t->kstack1);
+    mfree(t);
+    return 0;
 }
+
 
 // Kill the process with the given pid.
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
 int kill(int pid)
 {
-  struct task *t;
-
-  for(t = tasks; t < &tasks[CONFIG_NUM_TASKS]; t++){
-    acquire(&t->lock);
-    if(t->pid == pid){
-      t->killed = 1;
-      if(t->state == SLEEPING){
-        // Wake process from sleep().
-        t->state = RUNNABLE;
-      }
-      release(&t->lock);
-      return 0;
+    struct task *t;
+    for(t = gp_tm->tasks.head; t != NULL; t = t->next){
+        acquire(&t->lock);
+        if(t->pid == pid){
+            t->killed = 1;
+            if(t->state == SLEEPING){
+                // Wake process from sleep().
+                t->state = RUNNABLE;
+            }
+            release(&t->lock);
+            return 0;
+        }
+        release(&t->lock);
     }
-    release(&t->lock);
-  }
-  return -1;
+    return -1;
 }
 
 void setkilled(task_t *t)
@@ -578,3 +668,28 @@ int killed(task_t *t)
   release(&t->lock);
   return k;
 }
+/*
+int
+list_tasks()
+{
+    task_t *t;
+    printf("[SCHED] task list:\n");
+    for(t = gp_tm->tasks.head; t != NULL; t = t->next){
+        printf("    PID %d state %d\n", t->pid, t->state);
+    }
+    return 0;
+}
+
+void
+newsched_test(void)
+{
+    task_t *t1, *t2, *t3;
+    sched_initstart();
+    t1 = sched_taskalloc();
+    t2 = sched_taskalloc();
+    list_tasks();
+    sched_taskfree(t1);
+    t3 = sched_taskalloc();
+    list_tasks();
+}
+*/

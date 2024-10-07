@@ -24,6 +24,8 @@ struct elfhdr {
   uint16 shstrndx;
 };
 
+typedef struct elfhdr elfhdr_t;
+
 // Program section header
 struct proghdr {
   uint32 type;
@@ -35,6 +37,8 @@ struct proghdr {
   uint64 memsz;
   uint64 align;
 };
+
+typedef struct proghdr proghdr_t;
 
 // Values for Proghdr type
 #define ELF_PROG_LOAD           1

@@ -372,4 +372,8 @@ static inline u8 sdhci_readb(struct sdhci_host *host, int reg)
 }
 
 
+int sdhci_setup_cfg(mmc_config_t *cfg, sdhci_host_t *host,
+		uint32_t f_max, uint32_t f_min);
+int sdhci_init(struct mmc *mmc);
+
 #endif /* __SDHCI_H__ */
